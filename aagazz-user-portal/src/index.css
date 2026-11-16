@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #080604;
+    color: #F8F2E8;
+    overflow-x: hidden;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Perspective & 3D Container */
+.perspective-container {
+  perspective: 1200px;
+}
+
+/* 3D Ticket Card with Metallic Glare */
+.ticket-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.4s ease;
+  box-shadow: 
+    0 25px 60px -15px rgba(0, 0, 0, 0.9),
+    0 0 35px -5px rgba(217, 172, 99, 0.25),
+    inset 0 1px 1px rgba(255, 215, 138, 0.4),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.6);
+}
+
+.ticket-3d:hover {
+  transform: translateY(-6px) rotateX(2deg) scale(1.01);
+  box-shadow: 
+    0 35px 80px -20px rgba(0, 0, 0, 0.95),
+    0 0 50px 0px rgba(217, 172, 99, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.6);
+}
+
+/* Glassmorphism Luxury Styling */
+.glass-luxury {
+  background: radial-gradient(circle at top left, rgba(34, 31, 27, 0.85), rgba(15, 12, 10, 0.85));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(217, 172, 99, 0.35);
+  box-shadow: 
+    0 20px 45px rgba(0, 0, 0, 0.85),
+    inset 0 1px 0 rgba(255, 215, 138, 0.3);
+}
+
+.glass-card {
+  background: rgba(21, 16, 12, 0.7);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(217, 172, 99, 0.25);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+/* 3D Extruded Metallic Gold Button */
+.btn-gold-3d {
+  background: linear-gradient(135deg, #FFF0CF 0%, #FFD78A 25%, #D9AC63 60%, #B88643 100%);
+  color: #080604;
+  font-weight: 800;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 
+    0 8px 24px rgba(217, 172, 99, 0.4),
+    0 3px 0 #8B6528,
+    inset 0 1px 1px rgba(255, 255, 255, 0.9);
+  transition: all 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.btn-gold-3d:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 14px 34px rgba(217, 172, 99, 0.6),
+    0 4px 0 #8B6528,
+    inset 0 1px 2px rgba(255, 255, 255, 1);
+  filter: brightness(1.05);
+}
+
+.btn-gold-3d:active {
+  transform: translateY(2px) scale(0.98);
+  box-shadow: 
+    0 3px 10px rgba(217, 172, 99, 0.3),
+    0 1px 0 #8B6528,
+    inset 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+/* Secondary Metallic Dark Button */
+.btn-dark-metallic {
+  background: linear-gradient(145deg, #26211C 0%, #15100C 100%);
+  color: #FFD78A;
+  border: 1px solid rgba(217, 172, 99, 0.35);
+  box-shadow: 
+    0 8px 20px rgba(0, 0, 0, 0.7),
+    0 2px 0 rgba(217, 172, 99, 0.2),
+    inset 0 1px 0 rgba(255, 215, 138, 0.2);
+  transition: all 0.2s ease-out;
+}
+
+.btn-dark-metallic:hover {
+  border-color: #FFD78A;
+  background: linear-gradient(145deg, #332B24 0%, #1D1612 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.85), 0 0 15px rgba(217, 172, 99, 0.3);
+}
+
+.btn-dark-metallic:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* Gold Text Gradient */
+.gold-text-gradient {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF0CF 20%, #FFD78A 50%, #D9AC63 80%, #B88643 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Holographic Shimmer Animation */
+@keyframes goldShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer-gold {
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 215, 138, 0.2) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: goldShimmer 4s infinite linear;
+}
+
+/* Perforated ticket divider notches */
+.ticket-notch-left {
+  width: 18px;
+  height: 36px;
+  background-color: #080604;
+  border-top-right-radius: 9999px;
+  border-bottom-right-radius: 9999px;
+  box-shadow: inset -4px 0 6px rgba(0, 0, 0, 0.8);
+}
+
+.ticket-notch-right {
+  width: 18px;
+  height: 36px;
+  background-color: #080604;
+  border-top-left-radius: 9999px;
+  border-bottom-left-radius: 9999px;
+  box-shadow: inset 4px 0 6px rgba(0, 0, 0, 0.8);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #080604;
+}
+::-webkit-scrollbar-thumb {
+  background: #D9AC63;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #FFD78A;
+}

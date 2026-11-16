@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+*/node_modules/
+.venv/
+venv/
+env/
+
+# Build outputs
+dist/
+*/dist/
+build/
+*/build/
+
+# Python cache & bytecode
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*/.pytest_cache/
+.coverage
+htmlcov/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+aagazz.db
+*/aagazz.db
+
+# Secrets & Environment configs
+.env
+*/.env
+.env.local
+.env.*.local
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log

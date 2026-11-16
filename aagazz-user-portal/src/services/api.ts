@@ -1,0 +1,131 @@
+import type {
+  EventData,
+  EligibilityResponse,
+  SendOtpResponse,
+  VerifyIdentityResponse,
+  FoodCouponData,
+  ClaimTicketResponse
+} from '../types';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname || 'localhost'}:8000/api/v1`;
+
+function getAuthHeader(): Record<string, string> {
+  const token = localStorage.getItem('aagazz_student_token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+export const api = {
+  // Public
+  async getActiveEvent(): Promise<EventData> {
+    const res = await fetch(`${API_BASE_URL}/events/active`);
+    if (!res.ok) throw new Error('Failed to fetch event data');
+    return res.json();
+  },
+
+  // Auth & Whitelist
+  async checkEligibility(usn: string): Promise<EligibilityResponse> {
+    const res = await fetch(`${API_BASE_URL}/auth/eligibility`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usn }),
+    });
+    return res.json();
+  },
+
+  async sendOtp(usn: string): Promise<SendOtpResponse> {
+    const res = await fetch(`${API_BASE_URL}/auth/send-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usn }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to dispatch passcode');
+    }
+    return res.json();
+  },
+
+  async verifyIdentity(usn: string, otp: string): Promise<VerifyIdentityResponse> {
+    const res = await fetch(`${API_BASE_URL}/auth/verify-identity`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usn, otp }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Passcode verification failed');
+    }
+    const data: VerifyIdentityResponse = await res.json();
+    if (data.access_token) {
+      localStorage.setItem('aagazz_student_token', data.access_token);
+      localStorage.setItem('aagazz_student_usn', data.usn);
+      localStorage.setItem('aagazz_student_name', data.student_name);
+    }
+    return data;
+  },
+
+  // Direct Ticket Access with Common Passcode
+  async claimTicket(usn: string, accessCode: string): Promise<ClaimTicketResponse> {
+    const res = await fetch(`${API_BASE_URL}/students/claim-ticket`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usn, access_code: accessCode }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to claim VIP ticket');
+    }
+    const data: ClaimTicketResponse = await res.json();
+    if (data.access_token) {
+      localStorage.setItem('aagazz_student_token', data.access_token);
+      localStorage.setItem('aagazz_student_usn', data.usn);
+      localStorage.setItem('aagazz_student_name', data.student_name);
+    }
+    return data;
+  },
+
+  // Student Coupon
+  async registerAndClaimCoupon(): Promise<FoodCouponData> {
+    const res = await fetch(`${API_BASE_URL}/students/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader(),
+      },
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to claim coupon');
+    }
+    return res.json();
+  },
+
+  async getMyCoupon(): Promise<FoodCouponData> {
+    const res = await fetch(`${API_BASE_URL}/students/me/coupon`, {
+      headers: getAuthHeader(),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to retrieve coupon');
+    }
+    return res.json();
+  },
+
+  async getCouponStatus(): Promise<{ has_coupon: boolean; status?: string; redeemed_at?: string; volunteer_name?: string }> {
+    const res = await fetch(`${API_BASE_URL}/students/me/status`, {
+      headers: getAuthHeader(),
+    });
+    if (!res.ok) throw new Error('Failed to get coupon status');
+    return res.json();
+  },
+
+  logout() {
+    localStorage.removeItem('aagazz_student_token');
+    localStorage.removeItem('aagazz_student_usn');
+    localStorage.removeItem('aagazz_student_name');
+  },
+
+  isAuthenticated(): boolean {
+    return !!localStorage.getItem('aagazz_student_token');
+  }
+};

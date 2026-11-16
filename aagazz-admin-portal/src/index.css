@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #080604;
+    color: #F8F2E8;
+    overflow-x: hidden;
+  }
+}
+
+.glass-luxury {
+  background: rgba(21, 16, 12, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(217, 172, 99, 0.25);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8);
+}
+
+.btn-gold-3d {
+  background: linear-gradient(135deg, #FFD78A 0%, #D9AC63 50%, #B88643 100%);
+  color: #15100C;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(217, 172, 99, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transition: all 0.2s ease-out;
+}
+
+.btn-gold-3d:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(217, 172, 99, 0.5);
+}
+
+.btn-gold-3d:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.gold-text-gradient {
+  background: linear-gradient(180deg, #FFF0CF 0%, #FFD78A 35%, #D9AC63 70%, #B88643 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
