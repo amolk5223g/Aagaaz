@@ -7,7 +7,24 @@ import type {
   ClaimTicketResponse
 } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname || 'localhost'}:8000/api/v1`;
+function resolveApiBaseUrl(): string {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl) {
+    const cleanUrl = envUrl.replace(/\/+$/, '');
+    return cleanUrl.endsWith('/api/v1') ? cleanUrl : `${cleanUrl}/api/v1`;
+  }
+
+  if (typeof window !== 'undefined') {
+    // When served over HTTPS (e.g. on Vercel), insecure HTTP triggers Mixed Content blocking.
+    if (window.location.protocol === 'https:') {
+      return 'https://aagazz-backend.onrender.com/api/v1';
+    }
+    return `http://${window.location.hostname || 'localhost'}:8000/api/v1`;
+  }
+  return 'http://localhost:8000/api/v1';
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 function getAuthHeader(): Record<string, string> {
   const token = localStorage.getItem('aagazz_student_token');
