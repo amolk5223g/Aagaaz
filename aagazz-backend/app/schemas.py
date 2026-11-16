@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List, Any
 from datetime import datetime, date, time
 
@@ -16,7 +16,7 @@ class TokenData(BaseModel):
 
 # User Login
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 # Event
@@ -193,7 +193,7 @@ class RevokeCouponRequest(BaseModel):
 
 # Volunteers
 class CreateVolunteerRequest(BaseModel):
-    email: EmailStr
+    email: str
     full_name: str
     password: str
 
