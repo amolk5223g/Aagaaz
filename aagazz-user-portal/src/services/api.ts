@@ -17,7 +17,7 @@ function resolveApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
     // When served over HTTPS (e.g. on Vercel), insecure HTTP triggers Mixed Content blocking.
     if (window.location.protocol === 'https:') {
-      return 'https://aagazz-backend.onrender.com/api/v1';
+      return 'https://aagaaz-z7hb.onrender.com/api/v1';
     }
     return `http://${window.location.hostname || 'localhost'}:8000/api/v1`;
   }
