@@ -13,6 +13,10 @@ elif db_url.startswith("postgresql://") and not db_url.startswith("postgresql+")
 connect_args = {}
 if db_url.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
+elif "postgresql" in db_url:
+    connect_args["connect_timeout"] = 10
+    if "sslmode" not in db_url:
+        connect_args["sslmode"] = "require"
 
 engine = create_engine(
     db_url,
