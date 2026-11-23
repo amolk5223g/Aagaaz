@@ -20,4 +20,14 @@ services:
         sync: false
       - key: SECRET_KEY
         generateValue: true
+      - key: BREVO_API_KEY_1
+        sync: false
+      - key: BREVO_API_KEY_2
+        sync: false
+      - key: BREVO_SENDER_NAME
+        value: Aagaaz
+      - key: BREVO_SENDER_EMAIL
+        value: asamol918@gmail.com
+      - key: DEV_OTP_MODE
+        value: "false"
 

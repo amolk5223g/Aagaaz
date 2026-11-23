@@ -18,13 +18,11 @@ def generate_numeric_otp(length: int = 6) -> str:
     """Generate cryptographically secure 6-digit numeric OTP."""
     return "".join(str(secrets.randbelow(10)) for _ in range(length))
 
-def send_email_otp(to_email: str, student_name: str, usn: str, otp_code: str) -> bool:
+def send_email_otp(to_email: str, student_name: str, usn: str, otp_code: str) -> tuple[bool, str]:
     """
     Sends OTP via Brevo Transactional Email API with multi-key failover and retries.
-    Falls back gracefully if SMTP or Brevo is unreachable.
     """
-    success, info = send_brevo_otp(to_email=to_email, student_name=student_name, usn=usn, otp_code=otp_code)
-    return success
+    return send_brevo_otp(to_email=to_email, student_name=student_name, usn=usn, otp_code=otp_code)
 
 def create_and_send_otp(db: Session, usn: str, email: str, student_name: str) -> tuple[bool, str, str | None, int]:
     """
@@ -47,13 +45,18 @@ def create_and_send_otp(db: Session, usn: str, email: str, student_name: str) ->
             remaining = int(60 - elapsed)
             return False, f"Please wait {remaining} seconds before requesting a new OTP.", None, remaining
 
+    # Dispatch email FIRST before persisting OTP record
+    otp_code = generate_numeric_otp(6)
+    sent, delivery_msg = send_email_otp(to_email=email, student_name=student_name, usn=usn, otp_code=otp_code)
+    if not sent:
+        return False, delivery_msg, None, 0
+
     # Invalidate older active OTPs for this USN
     db.query(OtpVerification).filter(
         OtpVerification.usn == usn,
         OtpVerification.is_used == False
     ).update({"is_used": True})
     
-    otp_code = generate_numeric_otp(6)
     hashed_code = hash_otp(otp_code)
     expires_at = now + timedelta(minutes=5)
     
@@ -68,7 +71,6 @@ def create_and_send_otp(db: Session, usn: str, email: str, student_name: str) ->
     db.add(otp_record)
     db.commit()
     
-    send_email_otp(to_email=email, student_name=student_name, usn=usn, otp_code=otp_code)
     masked = mask_email(email)
     return True, masked, otp_code, 60
 

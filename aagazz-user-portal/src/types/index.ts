@@ -28,7 +28,6 @@ export interface SendOtpResponse {
   masked_email: string;
   expires_in_seconds: number;
   cooldown_seconds?: number;
-  dev_otp?: string;
 }
 
 export interface VerifyIdentityResponse {

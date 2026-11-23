@@ -137,8 +137,9 @@ def send_otp(payload: SendOtpRequest, request: Request, db: Session = Depends(ge
     )
 
     if not success:
+        status_code = status.HTTP_429_TOO_MANY_REQUESTS if cooldown > 0 else status.HTTP_502_BAD_GATEWAY
         raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            status_code=status_code,
             detail=result_msg
         )
 
@@ -158,8 +159,7 @@ def send_otp(payload: SendOtpRequest, request: Request, db: Session = Depends(ge
         message=f"Passcode dispatched to your registered email ({result_msg}).",
         masked_email=result_msg,
         expires_in_seconds=300,
-        cooldown_seconds=cooldown,
-        dev_otp=otp_code if settings.DEV_OTP_MODE else None
+        cooldown_seconds=cooldown
     )
 
 @router.post("/verify-identity", response_model=VerifyIdentityResponse)

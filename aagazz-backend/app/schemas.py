@@ -72,7 +72,6 @@ class SendOtpResponse(BaseModel):
     masked_email: str
     expires_in_seconds: int = 300
     cooldown_seconds: int = 60
-    dev_otp: Optional[str] = None # Present only in dev mode for testing!
 
 class VerifyIdentityRequest(BaseModel):
     usn: str

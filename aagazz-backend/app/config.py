@@ -32,14 +32,7 @@ class Settings(BaseSettings):
     BREVO_API_KEY_2: Optional[str] = None
     BREVO_SENDER_NAME: str = "Aagaaz"
     BREVO_SENDER_EMAIL: str = "asamol918@gmail.com"
-    
-    # SMTP / Fallback Email for OTP
-    SMTP_SERVER: Optional[str] = None
-    SMTP_PORT: int = 587
-    SMTP_USERNAME: Optional[str] = None
-    SMTP_PASSWORD: Optional[str] = None
-    SMTP_FROM_EMAIL: str = "aagazz2k26@sgbit.edu.in"
-    DEV_OTP_MODE: bool = True # In dev mode, OTP is logged or returned in testing responses
+    DEV_OTP_MODE: bool = False
     
     # CORS
     CORS_ORIGINS: list[str] = [

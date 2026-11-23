@@ -154,10 +154,13 @@ def send_brevo_otp(to_email: str, student_name: str, usn: str, otp_code: str) ->
 
     # If both keys returned errors, log clearly
     print(f"[BREVO SERVICE] All Brevo API keys exhausted. Last error: {last_error}")
-    print(f"[BREVO SERVICE] [FALLBACK ACTIVE] OTP for {student_name} <{to_email}>: {otp_code}")
     
-    # Check if dev mode is enabled to not block student access
-    if settings.DEV_OTP_MODE:
-        return True, f"Brevo delivery issue ({last_error}), dev OTP logged"
-    
-    return False, f"Email delivery failed: {last_error}"
+    if "unrecognised IP address" in last_error or "authorised_ips" in last_error:
+        user_msg = "Brevo email sending is blocked by IP restriction. Please disable 'Authorised IPs' in your Brevo account at: https://app.brevo.com/security/authorised_ips"
+    elif "sender" in last_error.lower() or "not allowed" in last_error.lower():
+        user_msg = f"Brevo sender '{sender_email}' is not validated. Please verify this sender email in your Brevo dashboard."
+    else:
+        user_msg = f"Email delivery failed via Brevo: {last_error}"
+
+    return False, user_msg
+

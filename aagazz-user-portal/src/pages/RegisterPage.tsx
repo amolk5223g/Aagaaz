@@ -30,7 +30,6 @@ export const RegisterPage: React.FC = () => {
   // Step 2 Inputs
   const [otp, setOtp] = useState('');
   const [maskedEmail, setMaskedEmail] = useState('');
-  const [devOtp, setDevOtp] = useState<string | null>(null);
 
   // Timers
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
@@ -91,9 +90,6 @@ export const RegisterPage: React.FC = () => {
     try {
       const res = await api.sendOtp(cleanUsn, cleanEmail);
       setMaskedEmail(res.masked_email || cleanEmail);
-      if (res.dev_otp) {
-        setDevOtp(res.dev_otp);
-      }
       setTimeLeft(res.expires_in_seconds || 300);
       setCooldown(res.cooldown_seconds || 60);
       setStep('OTP');
@@ -116,7 +112,6 @@ export const RegisterPage: React.FC = () => {
       const res = await api.sendOtp(usn.trim().toUpperCase(), email.trim().toLowerCase());
       setTimeLeft(res.expires_in_seconds || 300);
       setCooldown(res.cooldown_seconds || 60);
-      if (res.dev_otp) setDevOtp(res.dev_otp);
       setSuccessMsg(`A new passcode has been dispatched to ${res.masked_email || email}`);
     } catch (err: any) {
       setError(err.message || 'Failed to resend passcode. Please try again.');
@@ -191,25 +186,6 @@ export const RegisterPage: React.FC = () => {
         <div className="glass-luxury rounded-3xl p-6 sm:p-8 border border-[#D9AC63]/30 shadow-[0_12px_40px_rgba(0,0,0,0.85)] relative overflow-hidden">
           {/* Top Gold Accent Line */}
           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#FFD78A] to-transparent" />
-
-          {/* Dev OTP Helper Banner (if active) */}
-          {devOtp && step === 'OTP' && (
-            <div className="mb-4 p-3 rounded-xl bg-[#221F1B] border border-[#FFD78A]/50 text-xs text-[#FFD78A] flex items-center justify-between">
-              <div>
-                <span className="font-bold text-[10px] uppercase tracking-wider block text-[#D9AC63]">
-                  Development Mode Passcode
-                </span>
-                <span className="font-mono text-base font-bold tracking-widest">{devOtp}</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setOtp(devOtp)}
-                className="px-2.5 py-1 rounded-lg bg-[#D9AC63]/20 hover:bg-[#D9AC63]/30 text-[10px] font-bold text-[#FFD78A] transition-colors"
-              >
-                Auto Fill
-              </button>
-            </div>
-          )}
 
           {error && (
             <div className="mb-5 p-3.5 rounded-xl bg-red-950/40 border border-red-500/40 flex items-start gap-2.5 text-xs text-red-200">
