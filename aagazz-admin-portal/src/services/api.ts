@@ -152,6 +152,65 @@ export const api = {
     return res.json();
   },
 
+  async createStudent(payload: {
+    usn: string;
+    student_name: string;
+    email: string;
+    year?: number;
+    department?: string;
+  }): Promise<EligibleStudentItem> {
+    const res = await fetch(`${API_BASE_URL}/admin/students`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to add student');
+    }
+    return res.json();
+  },
+
+  async updateStudent(
+    id: string,
+    payload: {
+      student_name?: string;
+      email?: string;
+      year?: number;
+      department?: string;
+      is_active?: boolean;
+    }
+  ): Promise<EligibleStudentItem> {
+    const res = await fetch(`${API_BASE_URL}/admin/students/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to update student');
+    }
+    return res.json();
+  },
+
+  async deleteStudent(id: string): Promise<{ success: boolean; message: string }> {
+    const res = await fetch(`${API_BASE_URL}/admin/students/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeader(),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to delete student');
+    }
+    return res.json();
+  },
+
   // Coupons
   async getCoupons(
     search?: string,

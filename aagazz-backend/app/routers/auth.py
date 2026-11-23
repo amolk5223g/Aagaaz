@@ -14,6 +14,7 @@ from app.security import (
     create_access_token
 )
 from app.services.otp_service import create_and_send_otp, verify_otp_code
+from app.services.coupon_service import get_or_create_food_coupon
 from app.services.audit_service import log_audit
 from app.config import settings
 
@@ -104,24 +105,42 @@ def check_eligibility(payload: EligibilityCheckRequest, db: Session = Depends(ge
 
 @router.post("/send-otp", response_model=SendOtpResponse)
 def send_otp(payload: SendOtpRequest, request: Request, db: Session = Depends(get_db)):
-    """Dispatches a one-time passcode to the student's registered college email."""
+    """
+    Validates USN + registered email and dispatches a 6-digit OTP.
+    Enforces email match, active state, and a 60-second cooldown.
+    """
     usn = normalize_usn(payload.usn)
     whitelisted = db.query(EligibleStudent).filter(EligibleStudent.usn == usn).first()
     if not whitelisted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Student not found on official AI & DS whitelist."
+            detail="Student not found on official approved list. Please check your USN."
         )
 
     if not whitelisted.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Student profile is deactivated."
+            detail="Student profile is deactivated. Please contact faculty."
         )
 
-    success, masked_email, otp_code = create_and_send_otp(
+    # Verify submitted email matches registered email for this USN
+    input_email = (payload.email or "").strip().lower()
+    registered_email = (whitelisted.email or "").strip().lower()
+    if not input_email or input_email != registered_email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The entered email address does not match the registered email for this USN."
+        )
+
+    success, result_msg, otp_code, cooldown = create_and_send_otp(
         db, usn=whitelisted.usn, email=whitelisted.email, student_name=whitelisted.student_name
     )
+
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=result_msg
+        )
 
     log_audit(
         db,
@@ -136,24 +155,43 @@ def send_otp(payload: SendOtpRequest, request: Request, db: Session = Depends(ge
 
     return SendOtpResponse(
         success=True,
-        message=f"Passcode dispatched to your registered college email ({masked_email}).",
-        masked_email=masked_email,
+        message=f"Passcode dispatched to your registered email ({result_msg}).",
+        masked_email=result_msg,
         expires_in_seconds=300,
+        cooldown_seconds=cooldown,
         dev_otp=otp_code if settings.DEV_OTP_MODE else None
     )
 
 @router.post("/verify-identity", response_model=VerifyIdentityResponse)
 def verify_identity(payload: VerifyIdentityRequest, request: Request, db: Session = Depends(get_db)):
-    """Verifies OTP and returns student JWT token."""
+    """
+    Verifies OTP against secure SHA-256 hash.
+    Upon verification, unlocks and returns the student's unique digital food pass.
+    """
     usn = normalize_usn(payload.usn)
     whitelisted = db.query(EligibleStudent).filter(EligibleStudent.usn == usn).first()
     if not whitelisted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Student not found on official whitelist."
+            detail="Student not found on official approved list."
         )
 
-    # Validate OTP code
+    if not whitelisted.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Student profile is deactivated."
+        )
+
+    # Verify email matches registered record
+    input_email = (payload.email or "").strip().lower()
+    registered_email = (whitelisted.email or "").strip().lower()
+    if not input_email or input_email != registered_email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The entered email address does not match the registered record for this USN."
+        )
+
+    # Validate OTP code (hashed comparison, attempt limit, expiration)
     is_valid, msg = verify_otp_code(db, usn=usn, entered_otp=payload.otp)
     if not is_valid:
         raise HTTPException(
@@ -193,18 +231,19 @@ def verify_identity(payload: VerifyIdentityRequest, request: Request, db: Sessio
         db.commit()
         db.refresh(student)
 
-    # Check if coupon exists
-    coupon = db.query(FoodCoupon).filter(FoodCoupon.student_id == student.id).first()
+    # Automatically issue or retrieve food coupon for student
+    coupon, raw_token, is_new = get_or_create_food_coupon(db, student=student, event=event)
+    qr_payload = raw_token if raw_token else coupon.coupon_code
 
-    # Generate JWT for student
+    # Generate JWT for student session
     access_token = create_access_token(
         data={
-            "sub": student.email,
+            "sub": student.usn,
             "role": "STUDENT",
             "usn": student.usn,
             "student_id": student.id
         },
-        expires_delta=timedelta(hours=24)
+        expires_delta=timedelta(days=30)
     )
 
     log_audit(
@@ -214,13 +253,13 @@ def verify_identity(payload: VerifyIdentityRequest, request: Request, db: Sessio
         target_id=student.id,
         actor_email=student.email,
         actor_role="STUDENT",
-        details={"usn": usn},
+        details={"usn": usn, "coupon_code": coupon.coupon_code},
         ip_address=request.client.host if request.client else None
     )
 
     return VerifyIdentityResponse(
         success=True,
-        message="Identity verified successfully.",
+        message="Verification successful! VIP Food Pass unlocked.",
         access_token=access_token,
         token_type="bearer",
         student_id=student.id,
@@ -228,7 +267,9 @@ def verify_identity(payload: VerifyIdentityRequest, request: Request, db: Sessio
         student_name=student.student_name,
         email=student.email,
         department=student.department,
-        has_coupon=coupon is not None
+        has_coupon=True,
+        coupon_code=coupon.coupon_code,
+        qr_token=qr_payload
     )
 
 @router.post("/login", response_model=Token)

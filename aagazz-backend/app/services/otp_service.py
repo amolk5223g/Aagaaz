@@ -1,5 +1,6 @@
 import secrets
 import smtplib
+import hashlib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
@@ -8,12 +9,16 @@ from app.models import OtpVerification
 from app.config import settings
 from app.security import mask_email
 
+def hash_otp(code: str) -> str:
+    """Computes SHA-256 hash of the OTP for secure database storage."""
+    return hashlib.sha256(code.strip().encode("utf-8")).hexdigest()
+
 def generate_numeric_otp(length: int = 6) -> str:
-    """Generate cryptographically secure 6-digit numeric OTP"""
+    """Generate cryptographically secure 6-digit numeric OTP."""
     return "".join(str(secrets.randbelow(10)) for _ in range(length))
 
 def send_email_otp(to_email: str, student_name: str, otp_code: str) -> bool:
-    """Send OTP via SMTP if configured, otherwise log it"""
+    """Send OTP via SMTP if configured, otherwise log it."""
     if not settings.SMTP_SERVER or not settings.SMTP_USERNAME:
         print(f"[OTP SERVICE] (Dev Mode) OTP for {student_name} <{to_email}>: {otp_code}")
         return True
@@ -31,7 +36,7 @@ def send_email_otp(to_email: str, student_name: str, otp_code: str) -> bool:
                 <p style="color: #D9AC63; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Department of AI & DS | SGBIT</p>
                 <hr style="border: 0; border-top: 1px dashed #B88643; margin: 20px 0;">
                 <p style="font-size: 15px; color: #E9E1DB;">Hello <strong>{student_name}</strong>,</p>
-                <p style="font-size: 13px; color: #B9ADA0;">Your one-time passcode for claiming your official AAGAZZ 2K26 Food Coupon is:</p>
+                <p style="font-size: 13px; color: #B9ADA0;">Your one-time passcode for claiming your official AAGAZZ 2K26 Food Pass is:</p>
                 <div style="background: #221F1B; border: 2px solid #FFD78A; border-radius: 12px; padding: 14px; margin: 24px auto; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #FFD78A; display: inline-block;">
                     {otp_code}
                 </div>
@@ -52,21 +57,41 @@ def send_email_otp(to_email: str, student_name: str, otp_code: str) -> bool:
         print(f"[OTP SERVICE] SMTP delivery failed: {e}. Falling back to dev mode.")
         return False
 
-def create_and_send_otp(db: Session, usn: str, email: str, student_name: str) -> tuple[bool, str, str]:
-    """Generates, saves, and dispatches OTP. Returns (success, masked_email, otp_code)."""
-    # Invalidate older unexpired OTPs for this USN
+def create_and_send_otp(db: Session, usn: str, email: str, student_name: str) -> tuple[bool, str, str | None, int]:
+    """
+    Generates, securely hashes, saves, and dispatches OTP.
+    Enforces a 60-second cooldown on resends.
+    Returns (success, message_or_masked_email, plain_otp_code_if_success, cooldown_seconds).
+    """
+    now = datetime.utcnow()
+    
+    # Check cooldown: last unused OTP requested within 60 seconds
+    recent_otp = db.query(OtpVerification).filter(
+        OtpVerification.usn == usn,
+        OtpVerification.is_used == False,
+        OtpVerification.expires_at >= now
+    ).order_by(OtpVerification.created_at.desc()).first()
+
+    if recent_otp:
+        elapsed = (now - recent_otp.created_at).total_seconds()
+        if elapsed < 60:
+            remaining = int(60 - elapsed)
+            return False, f"Please wait {remaining} seconds before requesting a new OTP.", None, remaining
+
+    # Invalidate older active OTPs for this USN
     db.query(OtpVerification).filter(
         OtpVerification.usn == usn,
         OtpVerification.is_used == False
     ).update({"is_used": True})
     
     otp_code = generate_numeric_otp(6)
-    expires_at = datetime.utcnow() + timedelta(minutes=5)
+    hashed_code = hash_otp(otp_code)
+    expires_at = now + timedelta(minutes=5)
     
     otp_record = OtpVerification(
         usn=usn,
         email=email,
-        otp_code=otp_code,
+        otp_code=hashed_code, # Securely store SHA-256 hash, NEVER plain text
         expires_at=expires_at,
         is_used=False,
         attempts=0
@@ -76,11 +101,18 @@ def create_and_send_otp(db: Session, usn: str, email: str, student_name: str) ->
     
     send_email_otp(email, student_name, otp_code)
     masked = mask_email(email)
-    return True, masked, otp_code
+    return True, masked, otp_code, 60
 
 def verify_otp_code(db: Session, usn: str, entered_otp: str) -> tuple[bool, str]:
-    """Validates submitted OTP code against active unexpired database record."""
+    """
+    Validates submitted OTP code against active unexpired database record.
+    Compares SHA-256 hashes.
+    Limits incorrect attempts to 5 and invalidates OTP after successful verification.
+    """
     clean_otp = entered_otp.strip()
+    if len(clean_otp) != 6 or not clean_otp.isdigit():
+        return False, "Please enter a valid 6-digit numeric passcode."
+
     now = datetime.utcnow()
     
     record = db.query(OtpVerification).filter(
@@ -90,19 +122,21 @@ def verify_otp_code(db: Session, usn: str, entered_otp: str) -> tuple[bool, str]
     ).order_by(OtpVerification.created_at.desc()).first()
     
     if not record:
-        return False, "Passcode has expired or does not exist. Please request a new code."
+        return False, "Passcode has expired or does not exist. Please request a new OTP."
     
     record.attempts += 1
     if record.attempts > 5:
         record.is_used = True
         db.commit()
-        return False, "Too many failed attempts. Passcode invalidated. Please request a new code."
+        return False, "Too many failed attempts. Passcode invalidated. Please request a new OTP."
     
-    if record.otp_code != clean_otp:
+    expected_hash = hash_otp(clean_otp)
+    if record.otp_code != expected_hash:
         db.commit()
-        return False, "Incorrect passcode. Please check your college email."
+        remaining_attempts = max(0, 5 - record.attempts)
+        return False, f"Incorrect passcode. {remaining_attempts} attempt(s) remaining."
     
-    # Valid OTP! Mark as used
+    # Valid OTP! Mark as used to prevent replay/reuse
     record.is_used = True
     db.commit()
     return True, "Verification successful."

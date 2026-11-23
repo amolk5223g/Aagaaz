@@ -49,11 +49,11 @@ export const api = {
     return res.json();
   },
 
-  async sendOtp(usn: string): Promise<SendOtpResponse> {
+  async sendOtp(usn: string, email: string): Promise<SendOtpResponse> {
     const res = await fetch(`${API_BASE_URL}/auth/send-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ usn }),
+      body: JSON.stringify({ usn, email }),
     });
     if (!res.ok) {
       const err = await res.json();
@@ -62,11 +62,11 @@ export const api = {
     return res.json();
   },
 
-  async verifyIdentity(usn: string, otp: string): Promise<VerifyIdentityResponse> {
+  async verifyIdentity(usn: string, email: string, otp: string): Promise<VerifyIdentityResponse> {
     const res = await fetch(`${API_BASE_URL}/auth/verify-identity`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ usn, otp }),
+      body: JSON.stringify({ usn, email, otp }),
     });
     if (!res.ok) {
       const err = await res.json();

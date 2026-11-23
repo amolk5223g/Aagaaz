@@ -23,7 +23,7 @@ export interface EligibleStudentItem {
   id: string;
   usn: string;
   student_name: string;
-  email?: string;
+  email: string;
   department: string;
   year: number;
   is_active: boolean;

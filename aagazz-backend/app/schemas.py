@@ -64,16 +64,19 @@ class EligibilityCheckResponse(BaseModel):
 
 class SendOtpRequest(BaseModel):
     usn: str
+    email: str
 
 class SendOtpResponse(BaseModel):
     success: bool
     message: str
     masked_email: str
     expires_in_seconds: int = 300
+    cooldown_seconds: int = 60
     dev_otp: Optional[str] = None # Present only in dev mode for testing!
 
 class VerifyIdentityRequest(BaseModel):
     usn: str
+    email: str
     otp: str
 
 class VerifyIdentityResponse(BaseModel):
@@ -87,6 +90,8 @@ class VerifyIdentityResponse(BaseModel):
     email: str
     department: str
     has_coupon: bool = False
+    coupon_code: Optional[str] = None
+    qr_token: Optional[str] = None
 
 # Direct Student Ticket Access (Common Event Passcode)
 class ClaimTicketRequest(BaseModel):
@@ -164,6 +169,20 @@ class RedeemCouponResponse(BaseModel):
     redeemed_at: Optional[datetime] = None
 
 # Admin Student Management
+class CreateStudentRequest(BaseModel):
+    usn: str
+    student_name: str
+    email: str
+    year: Optional[int] = 1
+    department: Optional[str] = "AI & DS"
+
+class UpdateStudentRequest(BaseModel):
+    student_name: Optional[str] = None
+    email: Optional[str] = None
+    year: Optional[int] = None
+    department: Optional[str] = None
+    is_active: Optional[bool] = None
+
 class EligibleStudentResponse(BaseModel):
     id: str
     usn: str

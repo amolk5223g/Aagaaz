@@ -67,7 +67,7 @@ class OtpVerification(Base):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     usn = Column(String(50), nullable=False, index=True)
     email = Column(String(255), nullable=False)
-    otp_code = Column(String(10), nullable=False)
+    otp_code = Column(String(255), nullable=False) # Hashed SHA-256
     expires_at = Column(DateTime, nullable=False)
     is_used = Column(Boolean, nullable=False, default=False)
     attempts = Column(Integer, nullable=False, default=0)

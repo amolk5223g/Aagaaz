@@ -27,6 +27,7 @@ export interface SendOtpResponse {
   message: string;
   masked_email: string;
   expires_in_seconds: number;
+  cooldown_seconds?: number;
   dev_otp?: string;
 }
 
@@ -41,6 +42,8 @@ export interface VerifyIdentityResponse {
   email: string;
   department: string;
   has_coupon: boolean;
+  coupon_code?: string;
+  qr_token?: string;
 }
 
 export interface FoodCouponData {

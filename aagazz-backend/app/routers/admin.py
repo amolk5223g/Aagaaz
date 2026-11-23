@@ -10,13 +10,14 @@ from typing import Optional, List
 from app.database import get_db
 from app.models import (
     EligibleStudent, Student, FoodCoupon, Redemption,
-    UserRole, Event, AuditLog
+    UserRole, Event, AuditLog, OtpVerification
 )
 from app.schemas import (
     AnalyticsResponse, ImportSummaryResponse, EligibleStudentResponse,
     ToggleStudentStatusRequest, RevokeCouponRequest,
     CreateVolunteerRequest, VolunteerResponse,
-    RegistrationControlUpdate, EventUpdate
+    RegistrationControlUpdate, EventUpdate,
+    CreateStudentRequest, UpdateStudentRequest
 )
 from app.dependencies import require_admin
 from app.security import normalize_usn, hash_password
@@ -110,12 +111,12 @@ async def import_students_whitelist(
         elif "year" in col_clean:
             col_map["year"] = col
 
-    required_keys = ["usn", "name"]
+    required_keys = ["usn", "name", "email"]
     for req in required_keys:
         if req not in col_map:
             raise HTTPException(
                 status_code=400,
-                detail=f"Missing required column for '{req}'. Expected columns: USN, Student Name, Year."
+                detail=f"Missing required column for '{req}'. Expected columns: USN, Student Name, Email, Year."
             )
 
     total_records = len(rows)
@@ -126,24 +127,26 @@ async def import_students_whitelist(
     errors = []
 
     seen_file_usns = set()
+    seen_file_emails = set()
 
-    # Preload existing USNs to avoid N individual database queries
-    existing_db = db.query(EligibleStudent.usn).all()
-    existing_db_usns = {r[0] for r in existing_db}
+    # Preload existing USNs and Emails to avoid N individual database queries
+    existing_db = db.query(EligibleStudent.usn, EligibleStudent.email).all()
+    existing_db_usns = {r[0] for r in existing_db if r[0]}
+    existing_db_emails = {r[1].lower() for r in existing_db if r[1]}
 
     for idx, row in enumerate(rows, start=1):
         raw_usn = str(row.get(col_map["usn"], "")).strip()
         raw_name = str(row.get(col_map["name"], "")).strip()
-        raw_email = str(row.get(col_map.get("email", ""), "")).strip().lower() if "email" in col_map else None
+        raw_email = str(row.get(col_map["email"], "")).strip().lower()
         raw_dept = str(row.get(col_map.get("department", ""), "AI & DS")).strip()
         raw_year = row.get(col_map.get("year", 1), 1)
 
         usn = normalize_usn(raw_usn)
 
-        # Validation 1: Missing values (USN and Name required)
-        if not usn or not raw_name:
+        # Validation 1: Missing values (USN, Name, Email required)
+        if not usn or not raw_name or not raw_email or "@" not in raw_email or "." not in raw_email:
             invalid_records += 1
-            errors.append({"row": idx, "usn": raw_usn, "reason": "Missing USN or Student Name"})
+            errors.append({"row": idx, "usn": raw_usn, "reason": "Missing or invalid USN, Name, or Email ID"})
             continue
 
         # Validation 2: Department restriction (AI & DS only)
@@ -163,13 +166,29 @@ async def import_students_whitelist(
             errors.append({"row": idx, "usn": usn, "reason": "Duplicate USN within the uploaded file"})
             continue
 
-        seen_file_usns.add(usn)
+        # Validation 4: Duplicate Email in current file
+        if raw_email in seen_file_emails:
+            duplicate_records += 1
+            errors.append({"row": idx, "usn": usn, "reason": f"Duplicate Email '{raw_email}' within the uploaded file"})
+            continue
 
-        # Validation 4: Existing in database
+        seen_file_usns.add(usn)
+        seen_file_emails.add(raw_email)
+
+        # Validation 5: Existing USN in database
         if usn in existing_db_usns:
             duplicate_records += 1
             errors.append({"row": idx, "usn": usn, "reason": "USN already exists in database"})
             continue
+
+        # Validation 6: Existing Email in database
+        if raw_email in existing_db_emails:
+            duplicate_records += 1
+            errors.append({"row": idx, "usn": usn, "reason": f"Email '{raw_email}' already associated with another student in database"})
+            continue
+
+        existing_db_usns.add(usn)
+        existing_db_emails.add(raw_email)
 
         # Valid row to insert
         try:
@@ -180,7 +199,7 @@ async def import_students_whitelist(
         student_record = EligibleStudent(
             usn=usn,
             student_name=raw_name,
-            email=raw_email if raw_email else None,
+            email=raw_email,
             department="AI & DS",
             year=year_val,
             is_active=True,
@@ -306,6 +325,208 @@ def toggle_student_status(
     )
 
     return {"success": True, "message": f"Student {student.usn} status updated to {payload.is_active}"}
+
+@router.post("/students", response_model=EligibleStudentResponse)
+def create_student(
+    payload: CreateStudentRequest,
+    request: Request,
+    admin: UserRole = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Teacher/Faculty can add an individual student with USN, Full Name, and approved Email ID."""
+    clean_usn = normalize_usn(payload.usn)
+    if not clean_usn:
+        raise HTTPException(status_code=400, detail="A valid College USN is required.")
+
+    name = payload.student_name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Student Full Name is required.")
+
+    email = payload.email.strip().lower()
+    if not email or "@" not in email or "." not in email:
+        raise HTTPException(status_code=400, detail="A valid approved Email ID is required.")
+
+    # Validate duplicate USN
+    existing_usn = db.query(EligibleStudent).filter(EligibleStudent.usn == clean_usn).first()
+    if existing_usn:
+        raise HTTPException(status_code=400, detail=f"Student with USN '{clean_usn}' already exists.")
+
+    # Validate duplicate Email
+    existing_email = db.query(EligibleStudent).filter(EligibleStudent.email == email).first()
+    if existing_email:
+        raise HTTPException(status_code=400, detail=f"A student with email '{email}' is already registered (USN: {existing_email.usn}).")
+
+    new_student = EligibleStudent(
+        usn=clean_usn,
+        student_name=name,
+        email=email,
+        department=payload.department.strip() if payload.department else "AI & DS",
+        year=payload.year or 1,
+        is_active=True,
+        is_registered=False
+    )
+    db.add(new_student)
+    db.commit()
+    db.refresh(new_student)
+
+    log_audit(
+        db,
+        action="ADD_STUDENT_INDIVIDUAL",
+        target_entity="eligible_students",
+        target_id=new_student.id,
+        actor_id=admin.id,
+        actor_email=admin.email,
+        actor_role=admin.role,
+        details={"usn": new_student.usn, "name": new_student.student_name, "email": new_student.email},
+        ip_address=request.client.host if request.client else None
+    )
+
+    return EligibleStudentResponse(
+        id=new_student.id,
+        usn=new_student.usn,
+        student_name=new_student.student_name,
+        email=new_student.email,
+        department=new_student.department,
+        year=new_student.year,
+        is_active=new_student.is_active,
+        is_registered=new_student.is_registered,
+        coupon_status=None,
+        created_at=new_student.created_at
+    )
+
+@router.put("/students/{id}", response_model=EligibleStudentResponse)
+def update_student(
+    id: str,
+    payload: UpdateStudentRequest,
+    request: Request,
+    admin: UserRole = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Teacher/Faculty can edit individual student details including registered email."""
+    student = db.query(EligibleStudent).filter(EligibleStudent.id == id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student record not found.")
+
+    if payload.student_name is not None:
+        name = payload.student_name.strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="Student name cannot be empty.")
+        student.student_name = name
+
+    if payload.email is not None:
+        email = payload.email.strip().lower()
+        if not email or "@" not in email or "." not in email:
+            raise HTTPException(status_code=400, detail="Invalid Email ID format.")
+        # Check duplicate
+        dup = db.query(EligibleStudent).filter(
+            EligibleStudent.email == email,
+            EligibleStudent.id != id
+        ).first()
+        if dup:
+            raise HTTPException(status_code=400, detail=f"Email '{email}' is already associated with student USN '{dup.usn}'.")
+        student.email = email
+
+    if payload.year is not None:
+        student.year = payload.year
+
+    if payload.department is not None:
+        student.department = payload.department.strip()
+
+    if payload.is_active is not None:
+        student.is_active = payload.is_active
+
+    # Sync with registered Student record if student already claimed coupon
+    if student.student:
+        student.student.student_name = student.student_name
+        student.student.email = student.email
+        student.student.department = student.department
+
+    db.commit()
+    db.refresh(student)
+
+    coupon_status = None
+    if student.student and student.student.coupon:
+        coupon_status = student.student.coupon.status
+
+    log_audit(
+        db,
+        action="UPDATE_STUDENT_INDIVIDUAL",
+        target_entity="eligible_students",
+        target_id=student.id,
+        actor_id=admin.id,
+        actor_email=admin.email,
+        actor_role=admin.role,
+        details={"usn": student.usn, "name": student.student_name, "email": student.email},
+        ip_address=request.client.host if request.client else None
+    )
+
+    return EligibleStudentResponse(
+        id=student.id,
+        usn=student.usn,
+        student_name=student.student_name,
+        email=student.email,
+        department=student.department,
+        year=student.year,
+        is_active=student.is_active,
+        is_registered=student.is_registered,
+        coupon_status=coupon_status,
+        created_at=student.created_at
+    )
+
+@router.delete("/students/{id}")
+def delete_student(
+    id: str,
+    request: Request,
+    admin: UserRole = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Teacher/Faculty can remove a specific student.
+    Revokes any active food pass, deletes redemption records,
+    invalidates OTP sessions, and removes the student so their USN
+    cannot be used to access or redeem a food pass.
+    """
+    student = db.query(EligibleStudent).filter(EligibleStudent.id == id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student record not found.")
+
+    usn = student.usn
+    name = student.student_name
+    email = student.email
+
+    # 1. Clean up Student & FoodCoupon & Redemptions
+    registered = db.query(Student).filter(Student.eligible_student_id == student.id).first()
+    if registered:
+        coupon = db.query(FoodCoupon).filter(FoodCoupon.student_id == registered.id).first()
+        if coupon:
+            # Delete redemption if any
+            db.query(Redemption).filter(Redemption.coupon_id == coupon.id).delete()
+            db.delete(coupon)
+        db.delete(registered)
+
+    # 2. Invalidate/Delete OTP verification records
+    db.query(OtpVerification).filter(OtpVerification.usn == usn).delete()
+
+    # 3. Delete EligibleStudent record
+    db.delete(student)
+    db.commit()
+
+    log_audit(
+        db,
+        action="REMOVE_STUDENT_INDIVIDUAL",
+        target_entity="eligible_students",
+        target_id=id,
+        actor_id=admin.id,
+        actor_email=admin.email,
+        actor_role=admin.role,
+        details={"usn": usn, "name": name, "email": email},
+        ip_address=request.client.host if request.client else None
+    )
+
+    return {
+        "success": True,
+        "message": f"Student {usn} ({name}) has been permanently removed, and any associated food pass or verification session has been revoked."
+    }
 
 @router.get("/coupons")
 def list_coupons(
