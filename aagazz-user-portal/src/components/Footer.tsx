@@ -28,7 +28,7 @@ export const Footer: React.FC = () => {
         <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-[#B9ADA0] mb-8 bg-[#15100C]/80 px-6 py-3 rounded-full border border-[#D9AC63]/20">
           <span className="flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5 text-[#D9AC63]" />
-            20 November 2026
+            26 February 2026
           </span>
           <span className="text-[#D9AC63]">•</span>
           <span className="flex items-center gap-1.5">
@@ -53,7 +53,7 @@ export const Footer: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap justify-center gap-2">
-            {['Ms. Rakhi Kshirasagar', 'Mr. Shubham Kadam', 'Ms. Supriya Dadadamani', 'Mr. Saisagar Naik'].map((sc) => (
+            {['Ms. Rakhi Kshirasagar', 'Mr. Shubham Kadam', 'AMOL KUMBHAR'].map((sc) => (
               <span
                 key={sc}
                 className="px-3 py-1 rounded-full bg-[#15100C] text-[#F8F2E8] text-xs border border-[#D9AC63]/25 font-medium shadow-sm"

@@ -319,7 +319,7 @@ export const CouponPage: React.FC = () => {
 
           {/* Ticket Footnote */}
           <div className="bg-[#080604] px-5 py-2.5 border-t border-[#D9AC63]/20 flex items-center justify-between text-[10px] text-[#B9ADA0]">
-            <span>20 Nov 2026 • Friday</span>
+            <span>26 Feb 2026 • Thursday</span>
             <span className="text-[#FFD78A] font-semibold">AI & DS DEPT, SGBIT</span>
           </div>
         </div>

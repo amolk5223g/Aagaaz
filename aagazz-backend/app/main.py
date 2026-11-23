@@ -25,7 +25,7 @@ def seed_initial_data():
                     department="AI & DS",
                     college="S. G. Balekundri Institute of Technology, Belagavi",
                     batch="2025–29",
-                    event_date=date(2026, 11, 20),
+                    event_date=date(2026, 2, 26),
                     start_time=time(10, 0, 0),
                     end_time=time(14, 0, 0),
                     venue="C102, Department of AI & DS",
@@ -33,6 +33,10 @@ def seed_initial_data():
                 )
                 db.add(default_event)
                 print("[INIT] Created official AAGAZZ 2K26 Event")
+            elif existing_event.event_date != date(2026, 2, 26):
+                existing_event.event_date = date(2026, 2, 26)
+                db.commit()
+                print("[INIT] Updated existing Event date to 2026-02-26")
 
             # 2. Seed Default Admin & Volunteer
             existing_admin = db.query(UserRole).filter(UserRole.email == "admin@sgbit.edu.in").first()

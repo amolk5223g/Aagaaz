@@ -9,7 +9,7 @@ VALUES (
     'AI & DS',
     'S. G. Balekundri Institute of Technology, Belagavi',
     '2025–29',
-    '2026-11-20',
+    '2026-02-26',
     '10:00:00',
     '14:00:00',
     'C102, Department of AI & DS',

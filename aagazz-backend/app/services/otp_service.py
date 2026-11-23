@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.models import OtpVerification
 from app.config import settings
 from app.security import mask_email
+from app.services.brevo_service import send_brevo_otp
 
 def hash_otp(code: str) -> str:
     """Computes SHA-256 hash of the OTP for secure database storage."""
@@ -17,45 +18,13 @@ def generate_numeric_otp(length: int = 6) -> str:
     """Generate cryptographically secure 6-digit numeric OTP."""
     return "".join(str(secrets.randbelow(10)) for _ in range(length))
 
-def send_email_otp(to_email: str, student_name: str, otp_code: str) -> bool:
-    """Send OTP via SMTP if configured, otherwise log it."""
-    if not settings.SMTP_SERVER or not settings.SMTP_USERNAME:
-        print(f"[OTP SERVICE] (Dev Mode) OTP for {student_name} <{to_email}>: {otp_code}")
-        return True
-    
-    try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = f"AAGAZZ 2K26 - Verification Passcode: {otp_code}"
-        msg["From"] = f"AAGAZZ 2K26 <{settings.SMTP_FROM_EMAIL}>"
-        msg["To"] = to_email
-
-        html_content = f"""
-        <div style="background-color: #080604; color: #F8F2E8; padding: 32px; font-family: 'Plus Jakarta Sans', Arial, sans-serif; text-align: center;">
-            <div style="max-width: 480px; margin: 0 auto; background-color: #15100C; border: 1px solid #D9AC63; border-radius: 16px; padding: 24px;">
-                <h1 style="color: #FFD78A; font-family: 'Playfair Display', serif; margin-bottom: 4px;">AAGAZZ 2K26</h1>
-                <p style="color: #D9AC63; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Department of AI & DS | SGBIT</p>
-                <hr style="border: 0; border-top: 1px dashed #B88643; margin: 20px 0;">
-                <p style="font-size: 15px; color: #E9E1DB;">Hello <strong>{student_name}</strong>,</p>
-                <p style="font-size: 13px; color: #B9ADA0;">Your one-time passcode for claiming your official AAGAZZ 2K26 Food Pass is:</p>
-                <div style="background: #221F1B; border: 2px solid #FFD78A; border-radius: 12px; padding: 14px; margin: 24px auto; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #FFD78A; display: inline-block;">
-                    {otp_code}
-                </div>
-                <p style="font-size: 12px; color: #B9ADA0;">This passcode expires in <strong>5 minutes</strong>. Do not share it with anyone.</p>
-                <p style="font-size: 11px; color: #7C766B; margin-top: 24px;">S. G. Balekundri Institute of Technology, Belagavi</p>
-            </div>
-        </div>
-        """
-        msg.attach(MIMEText(html_content, "html"))
-
-        server = smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT)
-        server.starttls()
-        server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-        server.sendmail(settings.SMTP_FROM_EMAIL, to_email, msg.as_string())
-        server.quit()
-        return True
-    except Exception as e:
-        print(f"[OTP SERVICE] SMTP delivery failed: {e}. Falling back to dev mode.")
-        return False
+def send_email_otp(to_email: str, student_name: str, usn: str, otp_code: str) -> bool:
+    """
+    Sends OTP via Brevo Transactional Email API with multi-key failover and retries.
+    Falls back gracefully if SMTP or Brevo is unreachable.
+    """
+    success, info = send_brevo_otp(to_email=to_email, student_name=student_name, usn=usn, otp_code=otp_code)
+    return success
 
 def create_and_send_otp(db: Session, usn: str, email: str, student_name: str) -> tuple[bool, str, str | None, int]:
     """
@@ -99,7 +68,7 @@ def create_and_send_otp(db: Session, usn: str, email: str, student_name: str) ->
     db.add(otp_record)
     db.commit()
     
-    send_email_otp(email, student_name, otp_code)
+    send_email_otp(to_email=email, student_name=student_name, usn=usn, otp_code=otp_code)
     masked = mask_email(email)
     return True, masked, otp_code, 60
 

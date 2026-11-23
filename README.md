@@ -29,16 +29,14 @@ Aagaz/
 
 - **Event:** AAGAZZ 2K26 (Freshers' Function)
 - **Batch:** 2025–29 (Department of Artificial Intelligence and Data Science)
-- **Date:** 20 November 2026
+- **Date:** 26 February 2026
 - **Time:** 10:00 AM – 2:00 PM IST
 - **Venue:** Auditorium C102, Department of AI & DS, SGBIT Belagavi
 - **Primary Tagline:** *"Where Minds Connect and Futures Begin."*
 - **Secondary Tagline:** *"Explore • Innovate • Excel with AI."*
-- **Chief Guest:** Dr. B. R. Patagundi (Principal, SGBIT)
-- **Chairman, GC:** Dr. F. V. Manvi (Chairman, Governing Council, SGBIT)
-- **HOD:** Dr. Mallikarjun Math (Head of Department, AI & DS)
-- **Faculty Coordinator:** Prof. Neha Jadhav
-- **Student Coordinators:** Ms. Rakhi Kshirasagar, Mr. Shubham Kadam, Ms. Supriya Dadadamani, Mr. Saisagar Naik
+- **Chief Guest:** Mr. Jagadish Patil (MD & CEO, Krishi Valley Ventures LLP)
+- **Distinguished Dignitaries:** Neha J, Dr. Mallikarjun, Dr. B. R. Patagundi, Dr. F. V. Manvi
+- **Student Coordinators:** Ms. Rakhi Kshirasagar, Mr. Shubham Kadam, AMOL KUMBHAR
 
 ---
 

@@ -28,6 +28,7 @@ htmlcov/
 *.sqlite3
 aagazz.db
 */aagazz.db
+database_backups/
 
 # Secrets & Environment configs
 .env

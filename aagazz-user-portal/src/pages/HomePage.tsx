@@ -6,7 +6,6 @@ import {
   Clock,
   MapPin,
   Users,
-  Music,
   Gamepad2,
   Trophy,
   Star,
@@ -21,11 +20,6 @@ export const HomePage: React.FC = () => {
   const [posterModal, setPosterModal] = useState(false);
 
   const pillars = [
-    {
-      title: 'Music & Dance',
-      desc: 'Electrifying beats, live acoustic rhythm sessions and stunning departmental dance performances.',
-      icon: Music,
-    },
     {
       title: 'Fun Games',
       desc: 'High-energy icebreakers, live stage battles, rapid-fire trivia and interactive team showdowns.',
@@ -43,34 +37,35 @@ export const HomePage: React.FC = () => {
     },
   ];
 
-  const dignitaries = [
+  const chiefGuest = {
+    name: 'Mr. Jagadish Patil',
+    title: 'MD & CEO, Krishi Valley Ventures LLP',
+    role: 'Chief Guest',
+    icon: 'military_tech',
+  };
+
+  const otherDignitaries = [
+    {
+      name: 'Neha J',
+      role: 'Distinguished Dignitary',
+      icon: 'verified',
+    },
+    {
+      name: 'Dr. Mallikarjun',
+      role: 'Distinguished Dignitary',
+      icon: 'neurology',
+    },
     {
       name: 'Dr. B. R. Patagundi',
-      title: 'Principal, SGBIT',
-      role: 'Chief Guest',
-      icon: 'military_tech',
-      desc: 'Visionary institutional leadership fostering excellence in technical research and student innovation.',
+      role: 'Distinguished Dignitary',
+      position: 'Bottom Left',
+      icon: 'workspace_premium',
     },
     {
       name: 'Dr. F. V. Manvi',
-      title: 'Chairman, Governing Council, SGBIT',
-      role: 'Guest of Honour',
-      icon: 'workspace_premium',
-      desc: 'Eminent academic leader and guiding pillar of S. S. Education Trust.',
-    },
-    {
-      name: 'Dr. Malikarjun Math',
-      title: 'Head of Department',
-      role: 'Dept. of AI & DS',
-      icon: 'neurology',
-      desc: 'Driving cutting-edge Artificial Intelligence curriculum and student mentorship.',
-    },
-    {
-      name: 'Prof. Neha Jadhav',
-      title: 'Assistant Professor, AI & DS',
-      role: 'Faculty Coordinator',
-      icon: 'verified',
-      desc: 'Guiding and organizing the AAGAZZ 2K26 celebration for the incoming 2025–29 batch.',
+      role: 'Distinguished Dignitary',
+      position: 'Bottom Right',
+      icon: 'school',
     },
   ];
 
@@ -126,7 +121,7 @@ export const HomePage: React.FC = () => {
             <div className="flex items-center gap-2 mt-1.5">
               <Calendar className="w-5 h-5 text-[#FFD78A]" />
               <span className="font-serif text-xl sm:text-2xl font-bold text-[#FFD78A] tracking-wider">
-                20 November 2026
+                26 February 2026
               </span>
             </div>
             <p className="text-xs text-[#B9ADA0] mt-1 font-medium">
@@ -240,8 +235,8 @@ export const HomePage: React.FC = () => {
               <Calendar className="w-5 h-5" />
             </div>
             <span className="text-[10px] uppercase text-[#B9ADA0] font-semibold">Date</span>
-            <span className="font-serif text-lg font-bold text-[#F8F2E8] mt-0.5">20 Nov 2026</span>
-            <span className="text-[11px] text-[#D9AC63] mt-0.5">Friday Gala</span>
+            <span className="font-serif text-lg font-bold text-[#F8F2E8] mt-0.5">26 Feb 2026</span>
+            <span className="text-[11px] text-[#D9AC63] mt-0.5">Thursday Gala</span>
           </div>
 
           <div className="bg-[#15100C]/90 border border-[#D9AC63]/25 rounded-xl p-4 flex flex-col justify-between shadow-lg">
@@ -280,22 +275,22 @@ export const HomePage: React.FC = () => {
             ✦ Experience The Energy ✦
           </span>
           <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#F8F2E8] mt-1">
-            Four Pillars of Celebration
+            Pillars of Celebration
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-3xl mx-auto">
           {pillars.map((pillar) => {
             const Icon = pillar.icon;
             return (
               <div
                 key={pillar.title}
-                className="bg-[#15100C]/80 border border-[#D9AC63]/20 rounded-2xl p-5 flex flex-col items-center text-center shadow-lg hover:border-[#D9AC63]/50 transition-colors"
+                className="bg-[#15100C]/80 border border-[#D9AC63]/20 rounded-2xl p-6 flex flex-col items-center text-center shadow-lg hover:border-[#D9AC63]/50 transition-all hover:-translate-y-1"
               >
-                <div className="w-12 h-12 rounded-full bg-[#221F1B] flex items-center justify-center text-[#FFD78A] mb-3 shadow-[0_0_15px_rgba(217,172,99,0.2)]">
-                  <Icon className="w-6 h-6" />
+                <div className="w-14 h-14 rounded-full bg-[#221F1B] border border-[#D9AC63]/30 flex items-center justify-center text-[#FFD78A] mb-3.5 shadow-[0_0_20px_rgba(217,172,99,0.2)]">
+                  <Icon className="w-7 h-7 text-[#FFD78A]" />
                 </div>
-                <h3 className="font-serif text-lg font-bold text-[#FFD78A] mb-1">
+                <h3 className="font-serif text-lg font-bold text-[#FFD78A] mb-1.5">
                   {pillar.title}
                 </h3>
                 <p className="text-xs text-[#B9ADA0] leading-relaxed">
@@ -309,22 +304,48 @@ export const HomePage: React.FC = () => {
 
       {/* 5. HONORED DIGNITARIES SECTION */}
       <section className="px-4 py-10 max-w-4xl mx-auto relative z-10">
-        <div className="text-center mb-6">
+        <div className="text-center mb-8">
           <span className="text-[11px] font-bold text-[#FFD78A] tracking-[0.25em] uppercase">
-            ✦ Patronage & Leadership ✦
+            ✦ Patronage &amp; Leadership ✦
           </span>
           <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#F8F2E8] mt-1">
             Distinguished Dignitaries
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {dignitaries.map((dig) => (
+        {/* Top Center – Chief Guest (Prominent Visual Design) */}
+        <div className="w-full max-w-lg mx-auto mb-6">
+          <div className="relative p-[1px] rounded-2xl bg-gradient-to-r from-[#D9AC63] via-[#FFD78A] to-[#D9AC63] shadow-[0_8px_30px_rgba(217,172,99,0.25)]">
+            <div className="bg-[#15100C] rounded-2xl p-6 sm:p-7 flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-5">
+              <div className="w-16 h-16 rounded-2xl bg-[#080604] border-2 border-[#FFD78A] flex items-center justify-center text-[#FFD78A] flex-shrink-0 shadow-gold">
+                <span className="material-symbols-outlined text-[32px] text-[#FFD78A]">
+                  {chiefGuest.icon}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#221F1B] border border-[#FFD78A]/40 text-[#FFD78A] text-[10px] font-bold uppercase tracking-widest w-fit mx-auto sm:mx-0 mb-1.5 shadow-sm">
+                  <Sparkles className="w-3 h-3 text-[#D9AC63]" />
+                  <span>{chiefGuest.role}</span>
+                </div>
+                <h3 className="font-serif text-2xl font-bold text-[#F8F2E8] leading-tight">
+                  {chiefGuest.name}
+                </h3>
+                <p className="text-xs font-semibold text-[#FFD78A] mt-1 tracking-wide">
+                  {chiefGuest.title}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Other Distinguished Dignitaries – Balanced 2x2 Layout */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
+          {otherDignitaries.map((dig) => (
             <div
               key={dig.name}
-              className="bg-[#15100C]/90 border border-[#D9AC63]/25 rounded-2xl p-5 flex items-start gap-4 shadow-lg"
+              className="bg-[#15100C]/90 border border-[#D9AC63]/25 rounded-2xl p-5 flex items-center gap-4 shadow-lg hover:border-[#D9AC63]/40 transition-colors"
             >
-              <div className="w-12 h-12 rounded-full bg-[#221F1B] border border-[#D9AC63]/40 flex items-center justify-center text-[#FFD78A] flex-shrink-0 shadow-gold">
+              <div className="w-12 h-12 rounded-xl bg-[#221F1B] border border-[#D9AC63]/40 flex items-center justify-center text-[#FFD78A] flex-shrink-0 shadow-gold">
                 <span className="material-symbols-outlined text-[24px] text-[#FFD78A]">
                   {dig.icon}
                 </span>
@@ -333,12 +354,9 @@ export const HomePage: React.FC = () => {
                 <span className="font-serif text-lg font-bold text-[#F8F2E8] leading-snug">
                   {dig.name}
                 </span>
-                <span className="text-xs font-semibold text-[#FFD78A] mt-0.5">
-                  {dig.role} • {dig.title}
+                <span className="text-[11px] font-semibold text-[#FFD78A] mt-0.5">
+                  {dig.role}
                 </span>
-                <p className="text-xs text-[#B9ADA0] mt-1 leading-relaxed">
-                  {dig.desc}
-                </p>
               </div>
             </div>
           ))}

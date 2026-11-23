@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS events (
     department VARCHAR(100) NOT NULL DEFAULT 'AI & DS',
     college VARCHAR(255) NOT NULL DEFAULT 'S. G. Balekundri Institute of Technology, Belagavi',
     batch VARCHAR(50) NOT NULL DEFAULT '2025–29',
-    event_date DATE NOT NULL DEFAULT '2026-11-20',
+    event_date DATE NOT NULL DEFAULT '2026-02-26',
     start_time TIME NOT NULL DEFAULT '10:00:00',
     end_time TIME NOT NULL DEFAULT '14:00:00',
     venue VARCHAR(255) NOT NULL DEFAULT 'C102, Department of AI & DS',

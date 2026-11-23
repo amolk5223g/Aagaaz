@@ -5,7 +5,7 @@ interface CountdownProps {
   targetDate?: string;
 }
 
-export const Countdown: React.FC<CountdownProps> = ({ targetDate = '2026-11-20T10:00:00+05:30' }) => {
+export const Countdown: React.FC<CountdownProps> = ({ targetDate = '2026-02-26T10:00:00+05:30' }) => {
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,

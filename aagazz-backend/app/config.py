@@ -27,7 +27,13 @@ class Settings(BaseSettings):
     SUPABASE_KEY: Optional[str] = None
     SUPABASE_SERVICE_ROLE_KEY: Optional[str] = None
     
-    # SMTP / Email for OTP
+    # Brevo Transactional Email API
+    BREVO_API_KEY_1: Optional[str] = None
+    BREVO_API_KEY_2: Optional[str] = None
+    BREVO_SENDER_NAME: str = "Aagaaz"
+    BREVO_SENDER_EMAIL: str = "asamol918@gmail.com"
+    
+    # SMTP / Fallback Email for OTP
     SMTP_SERVER: Optional[str] = None
     SMTP_PORT: int = 587
     SMTP_USERNAME: Optional[str] = None
