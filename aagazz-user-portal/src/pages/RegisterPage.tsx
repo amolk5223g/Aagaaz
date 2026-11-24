@@ -1,21 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Fingerprint,
-  Mail,
-  KeyRound,
-  ArrowRight,
-  ShieldCheck,
-  CheckCircle,
-  AlertCircle,
-  RefreshCw,
-  Sparkles,
-  ArrowLeft,
-  Clock,
-  Send
-} from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { api } from '../services/api';
+import { Flame, Frame, Match, Print } from '../components/Print';
+import { EVENT } from '../event';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -77,12 +65,12 @@ export const RegisterPage: React.FC = () => {
     const cleanEmail = email.trim().toLowerCase();
 
     if (!cleanUsn) {
-      setError('Please enter your official College USN.');
+      setError('Enter your college USN, for example 2BU22AI001.');
       return;
     }
 
     if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
-      setError('Please enter a valid college email address.');
+      setError('That email looks incomplete. Check the @ and the ending.');
       return;
     }
 
@@ -93,9 +81,9 @@ export const RegisterPage: React.FC = () => {
       setTimeLeft(res.expires_in_seconds || 300);
       setCooldown(res.cooldown_seconds || 60);
       setStep('OTP');
-      setSuccessMsg(`Passcode sent successfully to ${res.masked_email || cleanEmail}`);
+      setSuccessMsg(`Code sent to ${res.masked_email || cleanEmail}.`);
     } catch (err: any) {
-      setError(err.message || 'Unable to send passcode. Please check your USN and registered email.');
+      setError(err.message || 'The code could not be sent. Check your USN and email, then try again.');
     } finally {
       setLoading(false);
     }
@@ -112,9 +100,9 @@ export const RegisterPage: React.FC = () => {
       const res = await api.sendOtp(usn.trim().toUpperCase(), email.trim().toLowerCase());
       setTimeLeft(res.expires_in_seconds || 300);
       setCooldown(res.cooldown_seconds || 60);
-      setSuccessMsg(`A new passcode has been dispatched to ${res.masked_email || email}`);
+      setSuccessMsg(`New code sent to ${res.masked_email || email}.`);
     } catch (err: any) {
-      setError(err.message || 'Failed to resend passcode. Please try again.');
+      setError(err.message || 'The new code could not be sent. Try again in a minute.');
     } finally {
       setLoading(false);
     }
@@ -131,21 +119,26 @@ export const RegisterPage: React.FC = () => {
     const cleanOtp = otp.trim();
 
     if (!cleanOtp || cleanOtp.length !== 6 || !/^\d+$/.test(cleanOtp)) {
-      setError('Please enter a valid 6-digit numeric passcode.');
+      setError('The code is six digits. Check the email and try again.');
       return;
     }
 
     setLoading(true);
     try {
       const res = await api.verifyIdentity(cleanUsn, cleanEmail, cleanOtp);
-      setSuccessMsg(res.message || 'Verification successful! Unlocking your pass...');
+      setSuccessMsg(res.message || 'Verified. Opening your pass.');
 
-      // Celebratory golden confetti
+      // A shower of sparks
       confetti({
-        particleCount: 100,
+        particleCount: 160,
         spread: 80,
         origin: { y: 0.6 },
-        colors: ['#FFD78A', '#D9AC63', '#B88643', '#FFFFFF']
+        colors: ['#F6C915', '#E0301E', '#FFF6D8'],
+        shapes: ['square'],
+        scalar: 0.6,
+        gravity: 1.5,
+        startVelocity: 55,
+        disableForReducedMotion: true
       });
 
       // Smooth transition to Food Pass
@@ -153,223 +146,140 @@ export const RegisterPage: React.FC = () => {
         navigate('/coupon');
       }, 700);
     } catch (err: any) {
-      setError(err.message || 'Verification failed. Please check the passcode and try again.');
+      setError(err.message || 'That code did not work. Check the email or ask for a new one.');
     } finally {
       setLoading(false);
     }
   };
 
+  const verified = step === 'OTP' && !!successMsg && loading === false && otp.length === 6 && !error;
+
   return (
-    <div className="min-h-[85vh] flex items-center justify-center px-4 py-16 relative overflow-hidden">
-      {/* Background radial gold glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] bg-[#D9AC63]/10 rounded-full blur-[130px] pointer-events-none" />
-
-      <div className="w-full max-w-md relative z-10">
-        {/* Card Header */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#15100C] border border-[#D9AC63]/40 text-[#FFD78A] text-[11px] font-bold uppercase tracking-widest mb-3 shadow-gold">
-            <Sparkles className="w-3.5 h-3.5 text-[#D9AC63]" />
-            <span>AI &amp; DS Department • SGBIT</span>
-          </div>
-
-          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#F8F2E8] tracking-wide">
-            {step === 'DETAILS' ? 'STUDENT VERIFICATION' : 'ENTER PASSCODE'}
-          </h1>
-          <p className="text-xs text-[#B9ADA0] mt-1.5 max-w-xs mx-auto">
-            {step === 'DETAILS'
-              ? 'Enter your approved College USN and registered Email ID to claim your official AAGAZZ 2K26 Food Pass.'
-              : `A 6-digit one-time passcode was sent to ${maskedEmail || 'your email'}.`}
-          </p>
+    <section className="reg">
+      <div className={`reg__side ${error ? 'is-off' : ''}`} key={error ?? 'ok'}>
+        <h1>{step === 'DETAILS' ? 'Open the box' : 'Six matches'}</h1>
+        <div className="reg__emblem">
+          <Print art="emblem" />
+          {verified && <span className="hero__wick"><Flame /></span>}
         </div>
+      </div>
 
-        {/* Main Form Card */}
-        <div className="glass-luxury rounded-3xl p-6 sm:p-8 border border-[#D9AC63]/30 shadow-[0_12px_40px_rgba(0,0,0,0.85)] relative overflow-hidden">
-          {/* Top Gold Accent Line */}
-          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#FFD78A] to-transparent" />
-
-          {error && (
-            <div className="mb-5 p-3.5 rounded-xl bg-red-950/40 border border-red-500/40 flex items-start gap-2.5 text-xs text-red-200">
-              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {successMsg && (
-            <div className="mb-5 p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 flex items-center gap-2.5 text-xs text-emerald-300">
-              <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>{successMsg}</span>
-            </div>
-          )}
-
-          {/* STEP 1: USN + EMAIL INPUT FORM */}
+      <div className="reg__main">
+        <Frame className="slip">
           {step === 'DETAILS' ? (
-            <form onSubmit={handleSendOtp} className="space-y-4">
-              {/* USN Input */}
-              <div>
-                <label className="block text-[11px] uppercase tracking-wider text-[#FFD78A] font-bold mb-1.5">
-                  College USN <span className="text-red-400">*</span>
-                </label>
-                <div className="relative">
-                  <Fingerprint className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#D9AC63]" />
-                  <input
-                    type="text"
-                    placeholder="e.g. 2BU22AI001"
-                    value={usn}
-                    onChange={(e) => setUsn(e.target.value.toUpperCase())}
-                    required
-                    autoFocus
-                    className="w-full h-12 pl-11 pr-4 rounded-xl bg-[#080604] border border-[#D9AC63]/35 text-[#F8F2E8] text-sm font-mono tracking-wider placeholder:text-[#B9ADA0]/40 focus:outline-none focus:border-[#FFD78A] focus:ring-1 focus:ring-[#FFD78A] transition-all"
-                  />
-                </div>
-                <span className="text-[10px] text-[#B9ADA0] mt-1 block">
-                  Must be registered in the official AI &amp; DS whitelist roster.
-                </span>
+            <form onSubmit={handleSendOtp}>
+              <p className="slip__intro">
+                Write your USN and the email on the AI &amp; DS list. We'll send a code to check it's you.
+              </p>
+
+              <div className="field">
+                <label htmlFor="usn">College USN</label>
+                <input
+                  id="usn"
+                  type="text"
+                  placeholder="2BU22AI001"
+                  value={usn}
+                  onChange={(e) => setUsn(e.target.value.toUpperCase())}
+                  autoComplete="username"
+                  autoCapitalize="characters"
+                  spellCheck={false}
+                  required
+                  autoFocus
+                />
               </div>
 
-              {/* Registered Email Input */}
-              <div>
-                <label className="block text-[11px] uppercase tracking-wider text-[#FFD78A] font-bold mb-1.5">
-                  Registered Email Address <span className="text-red-400">*</span>
-                </label>
-                <div className="relative">
-                  <Mail className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#D9AC63]" />
-                  <input
-                    type="email"
-                    placeholder="e.g. student@sgbit.edu.in"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value.toLowerCase())}
-                    required
-                    className="w-full h-12 pl-11 pr-4 rounded-xl bg-[#080604] border border-[#D9AC63]/35 text-[#F8F2E8] text-sm placeholder:text-[#B9ADA0]/40 focus:outline-none focus:border-[#FFD78A] focus:ring-1 focus:ring-[#FFD78A] transition-all"
-                  />
-                </div>
-                <span className="text-[10px] text-[#B9ADA0] mt-1 block">
-                  Must match the approved email provided by your faculty coordinator.
-                </span>
+              <div className="field">
+                <label htmlFor="email">Registered email</label>
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="student@sgbit.edu.in"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value.toLowerCase())}
+                  autoComplete="email"
+                  aria-describedby="email-help"
+                  required
+                />
+                <p id="email-help">The one your faculty coordinator has for you.</p>
               </div>
 
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-gold-3d w-full h-12 rounded-xl uppercase tracking-wider text-xs flex items-center justify-center gap-2 mt-2 disabled:opacity-60"
-              >
-                {loading ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-[#080604]" />
-                    <span>Validating &amp; Sending OTP...</span>
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-4 h-4 text-[#080604]" />
-                    <span>Send Verification Code</span>
-                  </>
-                )}
+              <button type="submit" disabled={loading} className="plaque plaque--red plaque--wide">
+                {loading ? 'Sending the code' : 'Send my code'}
               </button>
-
-              <div className="flex items-center justify-center gap-2 pt-2 text-[11px] text-[#B9ADA0]">
-                <ShieldCheck className="w-4 h-4 text-[#D9AC63]" />
-                <span>Secure 256-bit encrypted faculty verification</span>
-              </div>
             </form>
           ) : (
-            /* STEP 2: 6-DIGIT OTP VERIFICATION FORM */
-            <form onSubmit={handleVerifyOtp} className="space-y-5">
-              {/* USN / Email summary pill */}
-              <div className="p-3 rounded-xl bg-[#080604] border border-[#D9AC63]/20 flex items-center justify-between text-xs">
-                <div>
-                  <span className="text-[#FFD78A] font-mono font-bold block">{usn}</span>
-                  <span className="text-[#B9ADA0] text-[11px] truncate max-w-[200px] block">
-                    {maskedEmail || email}
-                  </span>
-                </div>
+            <form onSubmit={handleVerifyOtp}>
+              <p className="slip__intro">
+                We sent six digits to {maskedEmail || 'your email'} for {usn}.{' '}
                 <button
                   type="button"
+                  className="link"
                   onClick={() => {
                     setStep('DETAILS');
                     setOtp('');
                     setError(null);
+                    setSuccessMsg(null);
                   }}
-                  className="text-[11px] text-[#D9AC63] hover:text-[#FFD78A] underline font-semibold flex items-center gap-1"
                 >
-                  <ArrowLeft className="w-3 h-3" />
-                  <span>Change</span>
+                  Change details
                 </button>
-              </div>
+              </p>
 
-              {/* 6-digit OTP Input */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-[11px] uppercase tracking-wider text-[#FFD78A] font-bold">
-                    6-Digit Passcode <span className="text-red-400">*</span>
-                  </label>
-                  <div className="flex items-center gap-1 text-[11px] font-mono text-[#D9AC63]">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>Expires in {formatTimer(timeLeft)}</span>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <KeyRound className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#D9AC63]" />
+              <div className="field">
+                <label htmlFor="otp">Six-digit code</label>
+                <div className="otp">
                   <input
+                    id="otp"
                     type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
                     maxLength={6}
-                    placeholder="• • • • • •"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                     required
                     autoFocus
-                    className="w-full h-14 pl-11 pr-4 rounded-xl bg-[#080604] border border-[#D9AC63]/40 text-[#FFD78A] text-2xl font-mono tracking-[0.5em] text-center placeholder:text-[#B9ADA0]/30 focus:outline-none focus:border-[#FFD78A] focus:ring-1 focus:ring-[#FFD78A] transition-all"
                   />
+                  <div className="otp__cells" aria-hidden="true">
+                    {Array.from({ length: 6 }, (_, i) => (
+                      <span key={i} className={i === otp.length ? 'is-next' : ''}>
+                        <Match state={error && otp.length === 6 ? 'burnt' : otp[i] ? 'lit' : 'fresh'} />
+                        <b>{otp[i]}</b>
+                      </span>
+                    ))}
+                  </div>
                 </div>
+                <p>
+                  {timeLeft > 0 ? `Each digit lights a match. They burn out in ${formatTimer(timeLeft)}.` : 'This code has expired. Ask for a new one.'}
+                </p>
               </div>
 
-              {/* Verify Button */}
               <button
                 type="submit"
                 disabled={loading || otp.length !== 6 || timeLeft === 0}
-                className="btn-gold-3d w-full h-12 rounded-xl uppercase tracking-wider text-xs flex items-center justify-center gap-2 disabled:opacity-50"
+                className="plaque plaque--red plaque--wide"
               >
-                {loading ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-[#080604]" />
-                    <span>Verifying Code...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Verify &amp; Claim Food Pass</span>
-                    <ArrowRight className="w-4 h-4 text-[#080604]" />
-                  </>
-                )}
+                {loading ? 'Checking the code' : 'Get my food coupon'}
               </button>
 
-              {/* Resend Cooldown Controls */}
-              <div className="flex items-center justify-between pt-2 text-xs border-t border-[#D9AC63]/15">
-                <span className="text-[#B9ADA0] text-[11px]">Didn't receive the code?</span>
-                <button
-                  type="button"
-                  onClick={handleResendOtp}
-                  disabled={cooldown > 0 || loading}
-                  className="text-xs font-semibold text-[#FFD78A] hover:text-white disabled:text-[#7C766B] disabled:cursor-not-allowed transition-colors"
-                >
-                  {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend OTP'}
-                </button>
-              </div>
+              <button type="button" className="link" onClick={handleResendOtp} disabled={cooldown > 0 || loading}>
+                {cooldown > 0 ? `Send a new code in ${cooldown}s` : 'Send a new code'}
+              </button>
             </form>
           )}
-        </div>
 
-        {/* Existing Coupon Shortcut */}
-        {api.isAuthenticated() && (
-          <div className="text-center mt-5">
-            <button
-              onClick={() => navigate('/coupon')}
-              className="text-xs text-[#D9AC63] hover:text-[#FFD78A] underline font-medium transition-colors"
-            >
-              Already verified? View your existing Food Pass →
-            </button>
+          <div role="status">
+            {error && <p className="notice notice--bad">{error}</p>}
+            {successMsg && !error && <p className="notice">{successMsg}</p>}
           </div>
+        </Frame>
+
+        {api.isAuthenticated() && (
+          <p className="reg__have">
+            Already have a coupon? <button className="link" onClick={() => navigate('/coupon')}>Open my pass</button>
+          </p>
         )}
+        <p className="reg__have">One coupon per USN, for {EVENT.name} on {EVENT.dayMonth}.</p>
       </div>
-    </div>
+    </section>
   );
 };

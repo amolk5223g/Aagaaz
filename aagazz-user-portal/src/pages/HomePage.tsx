@@ -1,389 +1,144 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Sparkles,
-  Calendar,
-  Clock,
-  MapPin,
-  Users,
-  Gamepad2,
-  Trophy,
-  Star,
-  ArrowRight,
-  CheckCircle2,
-  ExternalLink
-} from 'lucide-react';
 import { Countdown } from '../components/Countdown';
-import { ParticlesBackground } from '../components/ParticlesBackground';
+import { Hero } from '../components/Hero';
+import { Arc, Frame, Print } from '../components/Print';
+import { Ticket } from '../components/Ticket';
+import { EVENT } from '../event';
+
+const LABELS = [
+  { title: 'Fun games', art: 'top', ground: 'blue', text: 'Icebreakers, live stage battles, rapid-fire trivia and team showdowns.' },
+  { title: 'Exciting events', art: 'horn', ground: 'green', text: 'The freshers spotlight, a talent showcase, and the crowning of Mr. and Ms. Freshers.' },
+  { title: 'And much more', art: 'camera', ground: 'violet', text: 'A banquet, photo spots, keepsakes, and the people you will spend four years with.' },
+] as const;
+
+const STEPS = [
+  ['Open the box', 'Enter your USN and the email your faculty coordinator has on file.'],
+  ['Take one match', 'We email you six digits. They last five minutes.'],
+  ['Strike it once', `Show the QR at counter ${EVENT.counter}. One scan, one meal, and the match is burnt.`],
+];
 
 export const HomePage: React.FC = () => {
-  const [posterModal, setPosterModal] = useState(false);
+  const poster = useRef<HTMLDialogElement>(null);
+  const sheet = useRef<HTMLDivElement>(null);
+  const tray = useRef<HTMLDivElement>(null);
 
-  const pillars = [
-    {
-      title: 'Fun Games',
-      desc: 'High-energy icebreakers, live stage battles, rapid-fire trivia and interactive team showdowns.',
-      icon: Gamepad2,
-    },
-    {
-      title: 'Exciting Events',
-      desc: 'Freshers spotlight reveals, Mr. & Ms. Freshers crowning gala, talent showcase and memory captures.',
-      icon: Trophy,
-    },
-    {
-      title: 'And Much More...',
-      desc: 'Delicious banquet feast, exclusive photo-ops, gold memorabilia and lifetime bonds with peers.',
-      icon: Star,
-    },
-  ];
+  // The tray slides out of its sleeve as it crosses the screen.
+  useEffect(() => {
+    const el = tray.current;
+    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let raf = 0;
+    const place = () => {
+      raf = 0;
+      const b = el.getBoundingClientRect();
+      const k = Math.max(0, Math.min(1, (window.innerHeight * 0.92 - b.top) / (window.innerHeight * 0.62)));
+      el.style.setProperty('--out', k.toFixed(3));
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(place); };
+    place();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
 
-  const chiefGuest = {
-    name: 'Mr. Jagadish Patil',
-    title: 'MD & CEO, Krishi Valley Ventures LLP',
-    role: 'Chief Guest',
-    icon: 'military_tech',
+  // Moving over the sheet knocks the colour plates out of register.
+  const knock = (e: React.PointerEvent) => {
+    const el = sheet.current;
+    if (!el || e.pointerType !== 'mouse') return;
+    const b = el.getBoundingClientRect();
+    el.style.setProperty('--mx', `${((e.clientX - b.left) / b.width - 0.5) * 22}px`);
+    el.style.setProperty('--my', `${((e.clientY - b.top) / b.height - 0.5) * 16}px`);
+  };
+  const settle = () => {
+    sheet.current?.style.removeProperty('--mx');
+    sheet.current?.style.removeProperty('--my');
   };
 
-  const otherDignitaries = [
-    {
-      name: 'Neha J',
-      role: 'Distinguished Dignitary',
-      icon: 'verified',
-    },
-    {
-      name: 'Dr. Mallikarjun',
-      role: 'Distinguished Dignitary',
-      icon: 'neurology',
-    },
-    {
-      name: 'Dr. B. R. Patagundi',
-      role: 'Distinguished Dignitary',
-      position: 'Bottom Left',
-      icon: 'workspace_premium',
-    },
-    {
-      name: 'Dr. F. V. Manvi',
-      role: 'Distinguished Dignitary',
-      position: 'Bottom Right',
-      icon: 'school',
-    },
-  ];
-
   return (
-    <div className="relative min-h-screen bg-[#080604] overflow-hidden pt-20">
-      {/* Interactive ambient particles */}
-      <ParticlesBackground />
+    <>
+      <Hero />
 
-      {/* Volumetric Radial Glows */}
-      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[380px] h-[380px] rounded-full pointer-events-none bg-[#D9AC63]/10 blur-[100px] -z-10" />
-      <div className="absolute top-[600px] right-[-100px] w-[300px] h-[300px] rounded-full pointer-events-none bg-[#FFD78A]/10 blur-[90px] -z-10" />
-
-      {/* 1. CINEMATIC HERO SECTION */}
-      <section className="relative z-10 px-4 pt-6 pb-12 flex flex-col items-center text-center max-w-4xl mx-auto">
-        {/* Department Eyebrow Pill */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#15100C]/90 border border-[#D9AC63]/30 shadow-gold mb-4">
-          <Sparkles className="w-3.5 h-3.5 text-[#FFD78A]" />
-          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.25em] text-[#FFD78A]">
-            Department of AI & DS Presents
-          </span>
-        </div>
-
-        {/* Script Motto */}
-        <p className="font-serif italic text-base sm:text-lg text-[#FFD78A] tracking-wide mb-2">
-          New Friends • New Vibes • New Beginnings
-        </p>
-
-        {/* Grand Metallic Title */}
-        <div className="relative flex flex-col items-center my-2">
-          <h1 className="font-serif text-5xl sm:text-7xl md:text-8xl font-bold tracking-tight gold-text-gradient drop-shadow-[0_4px_24px_rgba(217,172,99,0.4)]">
-            AAGAZZ
-          </h1>
-          <span className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-[#FFD78A] -mt-2 tracking-widest drop-shadow-[0_2px_12px_rgba(217,172,99,0.5)]">
-            2K26
-          </span>
-        </div>
-
-        {/* Subtitle Calligraphy */}
-        <p className="font-serif italic text-base sm:text-xl text-[#F8F2E8]/90 max-w-md mt-2">
-          “Where Minds Connect and Futures Begin.”
-        </p>
-
-        <p className="text-xs uppercase tracking-[0.25em] text-[#D9AC63] font-semibold mt-1">
-          Explore • Innovate • Excel with AI
-        </p>
-
-        {/* Official Date Plaque */}
-        <div className="mt-6 w-full max-w-sm p-[1px] rounded-2xl bg-gradient-to-r from-transparent via-[#D9AC63] to-transparent shadow-2xl">
-          <div className="bg-[#15100C]/95 backdrop-blur-md px-6 py-4 rounded-2xl flex flex-col items-center">
-            <span className="text-[10px] font-bold text-[#D9AC63] tracking-[0.25em] uppercase">
-              ✦ OFFICIAL EVENT SCHEDULE ✦
-            </span>
-            <div className="flex items-center gap-2 mt-1.5">
-              <Calendar className="w-5 h-5 text-[#FFD78A]" />
-              <span className="font-serif text-xl sm:text-2xl font-bold text-[#FFD78A] tracking-wider">
-                26 February 2026
-              </span>
-            </div>
-            <p className="text-xs text-[#B9ADA0] mt-1 font-medium">
-              10:00 AM – 2:00 PM • Auditorium C102, AI & DS Dept
-            </p>
-          </div>
-        </div>
-
-        {/* Live Champagne Countdown Clock */}
-        <div className="mt-8 w-full flex justify-center">
-          <Countdown />
-        </div>
-
-        {/* 3D Tactile Action CTA Suite */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 w-full max-w-md mt-8">
-          <Link
-            to="/register"
-            className="btn-gold-3d w-full py-4 px-6 rounded-xl text-center uppercase tracking-wider text-sm flex items-center justify-center gap-2 group"
-          >
-            <Sparkles className="w-4 h-4 fill-current group-hover:rotate-12 transition-transform" />
-            <span>GET MY FOOD COUPON</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </Link>
-
-          <a
-            href="#highlights"
-            className="btn-dark-metallic w-full py-3.5 px-6 rounded-xl text-center text-sm font-semibold flex items-center justify-center gap-2"
-          >
-            <span>EXPLORE EVENT</span>
-          </a>
-        </div>
+      <section className="when">
+        <Print art="n26" className="when__num" ink={{ face: 'var(--red)', tone: 'var(--key)' }} />
+        <h2 className="when__text">
+          <span className="sr-only">26 </span>
+          <span>February</span>
+          <span className="when__sm">{EVENT.weekday}, 10 in the morning to 2 in the afternoon</span>
+          <span className="when__lg">{EVENT.venue}</span>
+          <span className="when__sm">Department of AI &amp; DS, SGBIT Belagavi</span>
+        </h2>
+        <button className="when__poster" onClick={() => poster.current?.showModal()}>
+          <img src="/aagazz_poster.png" alt="Open the event poster" loading="lazy" width="1043" height="1508" />
+        </button>
+        <Countdown />
       </section>
 
-      {/* 2. OFFICIAL POSTER SHOWCASE SECTION */}
-      <section className="px-4 py-8 max-w-4xl mx-auto relative z-10">
-        <div className="glass-luxury rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-center gap-8 border border-[#D9AC63]/30">
-          {/* Poster Image Preview */}
-          <div className="relative group w-full md:w-1/2 max-w-xs cursor-pointer" onClick={() => setPosterModal(true)}>
-            <div className="absolute -inset-1.5 bg-gradient-to-r from-[#FFD78A] via-[#D9AC63] to-[#B88643] rounded-2xl blur-md opacity-40 group-hover:opacity-75 transition-opacity" />
-            <div className="relative rounded-xl overflow-hidden border border-[#D9AC63]/50 shadow-2xl">
-              <img
-                src="/aagazz_poster.png"
-                alt="Official AAGAZZ 2K26 Event Poster"
-                className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                <span className="px-3 py-1.5 rounded-full bg-[#15100C]/90 text-[#FFD78A] text-xs font-semibold flex items-center gap-1.5 border border-[#D9AC63]/40">
-                  <ExternalLink className="w-3.5 h-3.5" /> Click to Expand
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Poster Description & Batch Welcome */}
-          <div className="w-full md:w-1/2 flex flex-col items-start text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#221F1B] border border-[#D9AC63]/30 text-[#D9AC63] text-xs font-bold mb-3">
-              <span>✦ S. S. EDUCATION TRUST ✦</span>
-            </div>
-
-            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#F8F2E8] mb-2">
-              S. G. Balekundri Institute of Technology, Belagavi
-            </h2>
-
-            <p className="text-sm text-[#FFD78A] font-semibold mb-2">
-              Welcoming the Fresh Minds of Batch 2025–29
-            </p>
-
-            <p className="text-xs sm:text-sm text-[#B9ADA0] leading-relaxed mb-4">
-              The Department of Artificial Intelligence and Data Science warmly invites all first-year
-              students to AAGAZZ 2K26. Claim your digital coupon now to enjoy complimentary dining at the banquet counter!
-            </p>
-
-            <div className="flex flex-col gap-2 w-full pt-2">
-              <div className="flex items-center gap-2 text-xs text-[#F8F2E8]">
-                <CheckCircle2 className="w-4 h-4 text-[#D9AC63]" />
-                <span>Strictly Whitelisted AI & DS Department Students</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-[#F8F2E8]">
-                <CheckCircle2 className="w-4 h-4 text-[#D9AC63]" />
-                <span>1 Digital Food Coupon per Eligible USN</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-[#F8F2E8]">
-                <CheckCircle2 className="w-4 h-4 text-[#D9AC63]" />
-                <span>Encrypted QR Verification for Seamless Entry</span>
-              </div>
-            </div>
-
-            <Link
-              to="/register"
-              className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FFD78A] to-[#D9AC63] text-[#080604] font-bold text-xs uppercase tracking-wider shadow-gold"
-            >
-              <span>Verify USN & Claim Pass</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. 2x2 INFORMATION MATRIX */}
-      <section className="px-4 py-8 max-w-4xl mx-auto relative z-10" id="highlights">
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-[11px] font-bold text-[#FFD78A] tracking-[0.2em] uppercase">
-            ✦ Key Event Coordinates ✦
-          </span>
-          <span className="text-xs text-[#B9ADA0]">Live Venue Data</span>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          <div className="bg-[#15100C]/90 border border-[#D9AC63]/25 rounded-xl p-4 flex flex-col justify-between shadow-lg">
-            <div className="w-9 h-9 rounded-lg bg-[#221F1B] flex items-center justify-center text-[#FFD78A] mb-2 shadow-inner">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <span className="text-[10px] uppercase text-[#B9ADA0] font-semibold">Date</span>
-            <span className="font-serif text-lg font-bold text-[#F8F2E8] mt-0.5">26 Feb 2026</span>
-            <span className="text-[11px] text-[#D9AC63] mt-0.5">Thursday Gala</span>
-          </div>
-
-          <div className="bg-[#15100C]/90 border border-[#D9AC63]/25 rounded-xl p-4 flex flex-col justify-between shadow-lg">
-            <div className="w-9 h-9 rounded-lg bg-[#221F1B] flex items-center justify-center text-[#FFD78A] mb-2 shadow-inner">
-              <Clock className="w-5 h-5" />
-            </div>
-            <span className="text-[10px] uppercase text-[#B9ADA0] font-semibold">Time</span>
-            <span className="font-serif text-lg font-bold text-[#F8F2E8] mt-0.5">10:00 AM</span>
-            <span className="text-[11px] text-[#D9AC63] mt-0.5">Sharp to 2:00 PM</span>
-          </div>
-
-          <div className="bg-[#15100C]/90 border border-[#D9AC63]/25 rounded-xl p-4 flex flex-col justify-between shadow-lg">
-            <div className="w-9 h-9 rounded-lg bg-[#221F1B] flex items-center justify-center text-[#FFD78A] mb-2 shadow-inner">
-              <MapPin className="w-5 h-5" />
-            </div>
-            <span className="text-[10px] uppercase text-[#B9ADA0] font-semibold">Venue</span>
-            <span className="font-serif text-lg font-bold text-[#F8F2E8] mt-0.5">C102 Aud.</span>
-            <span className="text-[11px] text-[#D9AC63] mt-0.5">AI & DS Dept Complex</span>
-          </div>
-
-          <div className="bg-[#15100C]/90 border border-[#D9AC63]/25 rounded-xl p-4 flex flex-col justify-between shadow-lg">
-            <div className="w-9 h-9 rounded-lg bg-[#221F1B] flex items-center justify-center text-[#FFD78A] mb-2 shadow-inner">
-              <Users className="w-5 h-5" />
-            </div>
-            <span className="text-[10px] uppercase text-[#B9ADA0] font-semibold">Honored Batch</span>
-            <span className="font-serif text-lg font-bold text-[#F8F2E8] mt-0.5">2025–29</span>
-            <span className="text-[11px] text-[#D9AC63] mt-0.5">AI & DS Engineers</span>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. FOUR PILLARS OF CELEBRATION */}
-      <section className="px-4 py-10 max-w-4xl mx-auto relative z-10">
-        <div className="text-center mb-6">
-          <span className="text-[11px] font-bold text-[#FFD78A] tracking-[0.25em] uppercase">
-            ✦ Experience The Energy ✦
-          </span>
-          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#F8F2E8] mt-1">
-            Pillars of Celebration
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-3xl mx-auto">
-          {pillars.map((pillar) => {
-            const Icon = pillar.icon;
-            return (
-              <div
-                key={pillar.title}
-                className="bg-[#15100C]/80 border border-[#D9AC63]/20 rounded-2xl p-6 flex flex-col items-center text-center shadow-lg hover:border-[#D9AC63]/50 transition-all hover:-translate-y-1"
-              >
-                <div className="w-14 h-14 rounded-full bg-[#221F1B] border border-[#D9AC63]/30 flex items-center justify-center text-[#FFD78A] mb-3.5 shadow-[0_0_20px_rgba(217,172,99,0.2)]">
-                  <Icon className="w-7 h-7 text-[#FFD78A]" />
-                </div>
-                <h3 className="font-serif text-lg font-bold text-[#FFD78A] mb-1.5">
-                  {pillar.title}
-                </h3>
-                <p className="text-xs text-[#B9ADA0] leading-relaxed">
-                  {pillar.desc}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* 5. HONORED DIGNITARIES SECTION */}
-      <section className="px-4 py-10 max-w-4xl mx-auto relative z-10">
-        <div className="text-center mb-8">
-          <span className="text-[11px] font-bold text-[#FFD78A] tracking-[0.25em] uppercase">
-            ✦ Patronage &amp; Leadership ✦
-          </span>
-          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#F8F2E8] mt-1">
-            Distinguished Dignitaries
-          </h2>
-        </div>
-
-        {/* Top Center – Chief Guest (Prominent Visual Design) */}
-        <div className="w-full max-w-lg mx-auto mb-6">
-          <div className="relative p-[1px] rounded-2xl bg-gradient-to-r from-[#D9AC63] via-[#FFD78A] to-[#D9AC63] shadow-[0_8px_30px_rgba(217,172,99,0.25)]">
-            <div className="bg-[#15100C] rounded-2xl p-6 sm:p-7 flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-5">
-              <div className="w-16 h-16 rounded-2xl bg-[#080604] border-2 border-[#FFD78A] flex items-center justify-center text-[#FFD78A] flex-shrink-0 shadow-gold">
-                <span className="material-symbols-outlined text-[32px] text-[#FFD78A]">
-                  {chiefGuest.icon}
-                </span>
-              </div>
-              <div className="flex flex-col">
-                <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#221F1B] border border-[#FFD78A]/40 text-[#FFD78A] text-[10px] font-bold uppercase tracking-widest w-fit mx-auto sm:mx-0 mb-1.5 shadow-sm">
-                  <Sparkles className="w-3 h-3 text-[#D9AC63]" />
-                  <span>{chiefGuest.role}</span>
-                </div>
-                <h3 className="font-serif text-2xl font-bold text-[#F8F2E8] leading-tight">
-                  {chiefGuest.name}
-                </h3>
-                <p className="text-xs font-semibold text-[#FFD78A] mt-1 tracking-wide">
-                  {chiefGuest.title}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Other Distinguished Dignitaries – Balanced 2x2 Layout */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
-          {otherDignitaries.map((dig) => (
-            <div
-              key={dig.name}
-              className="bg-[#15100C]/90 border border-[#D9AC63]/25 rounded-2xl p-5 flex items-center gap-4 shadow-lg hover:border-[#D9AC63]/40 transition-colors"
-            >
-              <div className="w-12 h-12 rounded-xl bg-[#221F1B] border border-[#D9AC63]/40 flex items-center justify-center text-[#FFD78A] flex-shrink-0 shadow-gold">
-                <span className="material-symbols-outlined text-[24px] text-[#FFD78A]">
-                  {dig.icon}
-                </span>
-              </div>
-              <div className="flex flex-col text-left">
-                <span className="font-serif text-lg font-bold text-[#F8F2E8] leading-snug">
-                  {dig.name}
-                </span>
-                <span className="text-[11px] font-semibold text-[#FFD78A] mt-0.5">
-                  {dig.role}
-                </span>
-              </div>
-            </div>
+      <section className="sheet" ref={sheet} onPointerMove={knock} onPointerLeave={settle}>
+        <div className="sheet__marks" aria-hidden="true"><i /><i /><i /><i /></div>
+        <h2>What's in the box</h2>
+        <div className="sheet__row">
+          {LABELS.map((l) => (
+            <article key={l.title} className={`label label--${l.ground}`}>
+              <Frame>
+                <h3 className="sr-only">{l.title}</h3>
+                <Arc size={l.title.length > 12 ? 46 : 54}>{l.title}</Arc>
+                <Print art={l.art} />
+                <p>{l.text}</p>
+              </Frame>
+            </article>
           ))}
         </div>
+        <div className="sheet__bar" aria-hidden="true">
+          {['--yellow', '--red', '--blue', '--green', '--violet', '--key'].map((c) => <i key={c} style={{ background: `var(${c})` }} />)}
+          <span>Keep in register</span>
+        </div>
       </section>
 
-      {/* Poster Lightbox Modal */}
-      {posterModal && (
-        <div
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
-          onClick={() => setPosterModal(false)}
-        >
-          <div className="relative max-w-lg max-h-[90vh] overflow-hidden rounded-2xl border border-[#D9AC63]">
-            <img
-              src="/aagazz_poster.png"
-              alt="Official AAGAZZ 2K26 Event Poster Full View"
-              className="w-full h-auto object-contain max-h-[85vh]"
-            />
-            <button
-              onClick={() => setPosterModal(false)}
-              className="absolute top-3 right-3 px-3 py-1 rounded-full bg-[#15100C]/90 text-[#FFD78A] text-xs font-bold border border-[#D9AC63]"
-            >
-              Close ✕
-            </button>
+      <section className="eat">
+        <div className="eat__copy">
+          <h2>Lunch is on the department</h2>
+          <ol>
+            {STEPS.map(([title, text]) => (
+              <li key={title}><h3>{title}</h3><p>{text}</p></li>
+            ))}
+          </ol>
+          <Link to="/register" className="plaque plaque--yellow">Get my food coupon</Link>
+          <p className="eat__note">For AI &amp; DS students on the department list. One coupon per USN.</p>
+        </div>
+        <div className="mbox" ref={tray}>
+          <div className="mbox__tray">
+            <Ticket name="Your name here" usn="Your USN" code="Yours alone" status="Sample" kind="active">
+              <Print art="thali" />
+            </Ticket>
+          </div>
+          <div className="mbox__sleeve">
+            <Print art="letteringSmall" />
+            <p>Average contents: one good lunch</p>
           </div>
         </div>
-      )}
-    </div>
+      </section>
+
+      <section className="guests">
+        <Frame className="guests__label">
+          <Print art="lotus" />
+          <p>Chief guest</p>
+          <h2>{EVENT.chiefGuest.name}</h2>
+          <p>{EVENT.chiefGuest.title}</p>
+        </Frame>
+        <div className="guests__rest">
+          <p>And our distinguished dignitaries</p>
+          <ul>{EVENT.dignitaries.map((d) => <li key={d}>{d}</li>)}</ul>
+        </div>
+      </section>
+
+      <dialog ref={poster} className="lightbox" onClick={() => poster.current?.close()} aria-label="Event poster">
+        <img src="/aagazz_poster.png" alt="Aagazz 2K26 poster" loading="lazy" />
+        <button className="plaque plaque--yellow">Close</button>
+      </dialog>
+    </>
   );
 };
