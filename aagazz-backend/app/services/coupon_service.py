@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
 from app.models import Student, FoodCoupon, Redemption, Event, EligibleStudent, UserRole
-from app.security import generate_secure_token, hash_qr_token
+from app.security import generate_secure_token, hash_qr_token, normalize_usn
 
 def generate_unique_coupon_code(student_usn: str) -> str:
     """e.g. FC-AAGAZZ-2026-089 or FC-AAGAZZ-2026-X9A2"""
@@ -72,20 +72,55 @@ def get_or_create_food_coupon(db: Session, student: Student, event: Event) -> tu
         )
 
 def lookup_coupon(db: Session, qr_token: str = None, coupon_code: str = None) -> FoodCoupon:
-    """Finds coupon by QR raw token or manual coupon code"""
-    query = db.query(FoodCoupon)
-    if qr_token:
-        token_hash = hash_qr_token(qr_token.strip())
-        coupon = query.filter(FoodCoupon.qr_token_hash == token_hash).first()
+    """
+    Finds coupon by QR raw token, manual coupon code, USN, or embedded URL.
+    Ultra-resilient to ensure valid student passes are never falsely rejected.
+    """
+    candidates = []
+    for raw in [qr_token, coupon_code]:
+        if raw and str(raw).strip():
+            val = str(raw).strip()
+            candidates.append(val)
+            # If input is a URL (e.g. scanned from phone or browser)
+            if "http" in val:
+                # Extract code or token from query param or path
+                if "code=" in val:
+                    candidates.append(val.split("code=")[-1].split("&")[0].strip())
+                if "token=" in val:
+                    candidates.append(val.split("token=")[-1].split("&")[0].strip())
+                if "usn=" in val:
+                    candidates.append(val.split("usn=")[-1].split("&")[0].strip())
+                # Last path segment
+                candidates.append(val.rstrip("/").split("/")[-1].strip())
+
+    for cand in candidates:
+        if not cand:
+            continue
+        clean = cand.upper()
+
+        # 1. Direct Coupon Code match (e.g. FC-AAGAZZ-2026-001)
+        coupon = db.query(FoodCoupon).filter(FoodCoupon.coupon_code == clean).first()
         if coupon:
             return coupon
-            
-    if coupon_code:
-        clean_code = coupon_code.strip().upper()
-        coupon = query.filter(FoodCoupon.coupon_code == clean_code).first()
+
+        # 2. Hash of QR raw token match
+        token_hash = hash_qr_token(cand)
+        coupon = db.query(FoodCoupon).filter(FoodCoupon.qr_token_hash == token_hash).first()
         if coupon:
             return coupon
-            
+
+        # 3. Direct raw token hash match (if scanner passed already hashed value)
+        coupon = db.query(FoodCoupon).filter(FoodCoupon.qr_token_hash == cand).first()
+        if coupon:
+            return coupon
+
+        # 4. Student USN match (volunteer typed student's USN)
+        norm_usn = normalize_usn(cand)
+        if norm_usn:
+            student = db.query(Student).filter(Student.usn == norm_usn).first()
+            if student and student.coupon:
+                return student.coupon
+
     return None
 
 def redeem_coupon_atomically(
