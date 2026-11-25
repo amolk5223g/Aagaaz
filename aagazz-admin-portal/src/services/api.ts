@@ -32,6 +32,25 @@ function getAuthHeader(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const headers = {
+    ...getAuthHeader(),
+    ...(options.headers || {}),
+  };
+  const res = await fetch(url, { ...options, headers });
+  if (res.status === 401) {
+    // Clear expired or invalid credentials
+    localStorage.removeItem('aagazz_admin_token');
+    localStorage.removeItem('aagazz_admin_role');
+    localStorage.removeItem('aagazz_admin_name');
+    localStorage.removeItem('aagazz_admin_email');
+    if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+      window.location.href = '/login?expired=1';
+    }
+  }
+  return res;
+}
+
 export const api = {
   // Authentication
   async login(email: string, password: string): Promise<AuthUser> {
@@ -80,19 +99,16 @@ export const api = {
 
   // Admin Dashboard
   async getAnalytics(): Promise<AnalyticsData> {
-    const res = await fetch(`${API_BASE_URL}/admin/analytics`, {
-      headers: getAuthHeader(),
-    });
+    const res = await authFetch(`${API_BASE_URL}/admin/analytics`);
     if (!res.ok) throw new Error('Failed to load dashboard metrics');
     return res.json();
   },
 
   async toggleRegistration(is_registration_open: boolean): Promise<boolean> {
-    const res = await fetch(`${API_BASE_URL}/admin/registration-control`, {
+    const res = await authFetch(`${API_BASE_URL}/admin/registration-control`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
       body: JSON.stringify({ is_registration_open }),
     });
@@ -106,9 +122,8 @@ export const api = {
     const formData = new FormData();
     formData.append('file', file);
 
-    const res = await fetch(`${API_BASE_URL}/admin/students/import`, {
+    const res = await authFetch(`${API_BASE_URL}/admin/students/import`, {
       method: 'POST',
-      headers: getAuthHeader(),
       body: formData,
     });
 
@@ -132,19 +147,16 @@ export const api = {
     if (search) params.append('search', search);
     if (statusFilter && statusFilter !== 'ALL') params.append('status_filter', statusFilter);
 
-    const res = await fetch(`${API_BASE_URL}/admin/students?${params.toString()}`, {
-      headers: getAuthHeader(),
-    });
+    const res = await authFetch(`${API_BASE_URL}/admin/students?${params.toString()}`);
     if (!res.ok) throw new Error('Failed to load students');
     return res.json();
   },
 
   async toggleStudentStatus(id: string, is_active: boolean) {
-    const res = await fetch(`${API_BASE_URL}/admin/students/${id}/status`, {
+    const res = await authFetch(`${API_BASE_URL}/admin/students/${id}/status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
       body: JSON.stringify({ is_active }),
     });
@@ -159,11 +171,10 @@ export const api = {
     year?: number;
     department?: string;
   }): Promise<EligibleStudentItem> {
-    const res = await fetch(`${API_BASE_URL}/admin/students`, {
+    const res = await authFetch(`${API_BASE_URL}/admin/students`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
       body: JSON.stringify(payload),
     });
@@ -184,11 +195,10 @@ export const api = {
       is_active?: boolean;
     }
   ): Promise<EligibleStudentItem> {
-    const res = await fetch(`${API_BASE_URL}/admin/students/${id}`, {
+    const res = await authFetch(`${API_BASE_URL}/admin/students/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
       body: JSON.stringify(payload),
     });
@@ -200,9 +210,8 @@ export const api = {
   },
 
   async deleteStudent(id: string): Promise<{ success: boolean; message: string }> {
-    const res = await fetch(`${API_BASE_URL}/admin/students/${id}`, {
+    const res = await authFetch(`${API_BASE_URL}/admin/students/${id}`, {
       method: 'DELETE',
-      headers: getAuthHeader(),
     });
     if (!res.ok) {
       const err = await res.json();
@@ -225,19 +234,16 @@ export const api = {
     if (search) params.append('search', search);
     if (statusFilter && statusFilter !== 'ALL') params.append('status_filter', statusFilter);
 
-    const res = await fetch(`${API_BASE_URL}/admin/coupons?${params.toString()}`, {
-      headers: getAuthHeader(),
-    });
+    const res = await authFetch(`${API_BASE_URL}/admin/coupons?${params.toString()}`);
     if (!res.ok) throw new Error('Failed to load coupons');
     return res.json();
   },
 
   async revokeCoupon(id: string, reason: string) {
-    const res = await fetch(`${API_BASE_URL}/admin/coupons/${id}/revoke`, {
+    const res = await authFetch(`${API_BASE_URL}/admin/coupons/${id}/revoke`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
       body: JSON.stringify({ reason }),
     });
@@ -247,19 +253,16 @@ export const api = {
 
   // Volunteers
   async getVolunteers(): Promise<VolunteerItem[]> {
-    const res = await fetch(`${API_BASE_URL}/admin/volunteers`, {
-      headers: getAuthHeader(),
-    });
+    const res = await authFetch(`${API_BASE_URL}/admin/volunteers`);
     if (!res.ok) throw new Error('Failed to load volunteers');
     return res.json();
   },
 
   async createVolunteer(payload: { email: string; full_name: string; password: string }): Promise<VolunteerItem> {
-    const res = await fetch(`${API_BASE_URL}/admin/volunteers`, {
+    const res = await authFetch(`${API_BASE_URL}/admin/volunteers`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
       body: JSON.stringify(payload),
     });
@@ -271,11 +274,10 @@ export const api = {
   },
 
   async toggleVolunteerStatus(id: string, is_active: boolean) {
-    const res = await fetch(`${API_BASE_URL}/admin/volunteers/${id}/status`, {
+    const res = await authFetch(`${API_BASE_URL}/admin/volunteers/${id}/status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
       body: JSON.stringify({ is_active }),
     });
@@ -285,11 +287,10 @@ export const api = {
 
   // Volunteer QR Scanner Endpoints
   async redeemCoupon(codeOrToken: string, counterName: string = 'Counter C102'): Promise<ScannerRedemptionResult> {
-    const res = await fetch(`${API_BASE_URL}/volunteer/coupons/redeem`, {
+    const res = await authFetch(`${API_BASE_URL}/volunteer/coupons/redeem`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
       body: JSON.stringify({
         qr_token: codeOrToken,
@@ -306,17 +307,13 @@ export const api = {
   },
 
   async getVolunteerStats(): Promise<{ volunteer_name: string; role: string; total_scanned: number }> {
-    const res = await fetch(`${API_BASE_URL}/volunteer/stats`, {
-      headers: getAuthHeader(),
-    });
+    const res = await authFetch(`${API_BASE_URL}/volunteer/stats`);
     if (!res.ok) throw new Error('Failed to get volunteer stats');
     return res.json();
   },
 
   async getVolunteerRedemptions(): Promise<any[]> {
-    const res = await fetch(`${API_BASE_URL}/volunteer/redemptions`, {
-      headers: getAuthHeader(),
-    });
+    const res = await authFetch(`${API_BASE_URL}/volunteer/redemptions`);
     if (!res.ok) throw new Error('Failed to get scan history');
     return res.json();
   }

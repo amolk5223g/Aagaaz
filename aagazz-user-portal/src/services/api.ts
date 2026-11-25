@@ -31,6 +31,20 @@ function getAuthHeader(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const headers = {
+    ...getAuthHeader(),
+    ...(options.headers || {}),
+  };
+  const res = await fetch(url, { ...options, headers });
+  if (res.status === 401) {
+    localStorage.removeItem('aagazz_student_token');
+    localStorage.removeItem('aagazz_student_usn');
+    localStorage.removeItem('aagazz_student_name');
+  }
+  return res;
+}
+
 export const api = {
   // Public
   async getActiveEvent(): Promise<EventData> {
@@ -103,11 +117,10 @@ export const api = {
 
   // Student Coupon
   async registerAndClaimCoupon(): Promise<FoodCouponData> {
-    const res = await fetch(`${API_BASE_URL}/students/register`, {
+    const res = await authFetch(`${API_BASE_URL}/students/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
     });
     if (!res.ok) {
@@ -118,9 +131,7 @@ export const api = {
   },
 
   async getMyCoupon(): Promise<FoodCouponData> {
-    const res = await fetch(`${API_BASE_URL}/students/me/coupon`, {
-      headers: getAuthHeader(),
-    });
+    const res = await authFetch(`${API_BASE_URL}/students/me/coupon`);
     if (!res.ok) {
       const err = await res.json();
       throw new Error(err.detail || 'Failed to retrieve coupon');
@@ -129,9 +140,7 @@ export const api = {
   },
 
   async getCouponStatus(): Promise<{ has_coupon: boolean; status?: string; redeemed_at?: string; volunteer_name?: string }> {
-    const res = await fetch(`${API_BASE_URL}/students/me/status`, {
-      headers: getAuthHeader(),
-    });
+    const res = await authFetch(`${API_BASE_URL}/students/me/status`);
     if (!res.ok) throw new Error('Failed to get coupon status');
     return res.json();
   },

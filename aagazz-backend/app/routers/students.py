@@ -112,9 +112,16 @@ def claim_or_get_ticket(payload: ClaimTicketRequest, request: Request, db: Sessi
     qr_payload = raw_token if raw_token else coupon.coupon_code
     redemption = coupon.redemption
 
+    if coupon.status == "REDEEMED":
+        msg = "VIP Food Pass has ALREADY been redeemed! Strictly 1 food coupon per student is permitted."
+    elif not is_new:
+        msg = "Existing VIP Food Pass retrieved. Exactly one coupon is permitted per USN."
+    else:
+        msg = "VIP Food Pass claimed successfully!"
+
     return ClaimTicketResponse(
         success=True,
-        message="VIP Food Pass claimed successfully!" if is_new else "VIP Food Pass retrieved successfully.",
+        message=msg,
         access_token=access_token,
         token_type="bearer",
         coupon_id=coupon.id,

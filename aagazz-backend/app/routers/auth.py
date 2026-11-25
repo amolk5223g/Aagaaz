@@ -72,9 +72,20 @@ def check_eligibility(payload: EligibilityCheckRequest, db: Session = Depends(ge
     registered_student = db.query(Student).filter(Student.usn == usn).first()
     if registered_student:
         coupon = db.query(FoodCoupon).filter(FoodCoupon.student_id == registered_student.id).first()
+        if coupon and coupon.status == "REDEEMED":
+            return EligibilityCheckResponse(
+                status="ALREADY_REGISTERED",
+                message="FOOD PASS ALREADY REDEEMED! This USN has already redeemed its food pass. Strictly 1 coupon per student is permitted.",
+                student_name=whitelisted.student_name,
+                masked_email=mask_email(whitelisted.email),
+                usn=usn,
+                department=whitelisted.department,
+                has_existing_coupon=True,
+                coupon_id=coupon.id
+            )
         return EligibilityCheckResponse(
             status="ALREADY_REGISTERED",
-            message="YOU ALREADY HAVE YOUR AAGAZZ FOOD COUPON! Proceed to verify passcode to retrieve your coupon.",
+            message="YOU ALREADY HAVE YOUR AAGAZZ FOOD COUPON! Proceed to verify passcode to retrieve your pass.",
             student_name=whitelisted.student_name,
             masked_email=mask_email(whitelisted.email),
             usn=usn,
@@ -154,9 +165,17 @@ def send_otp(payload: SendOtpRequest, request: Request, db: Session = Depends(ge
         ip_address=request.client.host if request.client else None
     )
 
+    existing_student = db.query(Student).filter(Student.usn == usn).first()
+    extra_note = ""
+    if existing_student and existing_student.coupon:
+        if existing_student.coupon.status == "REDEEMED":
+            extra_note = " Note: Your food pass has ALREADY been redeemed."
+        else:
+            extra_note = " Existing VIP Food Pass will be retrieved."
+
     return SendOtpResponse(
         success=True,
-        message=f"Passcode dispatched to your registered email ({result_msg}).",
+        message=f"Passcode dispatched to your registered email ({result_msg}).{extra_note}",
         masked_email=result_msg,
         expires_in_seconds=300,
         cooldown_seconds=cooldown
@@ -257,9 +276,16 @@ def verify_identity(payload: VerifyIdentityRequest, request: Request, db: Sessio
         ip_address=request.client.host if request.client else None
     )
 
+    if coupon.status == "REDEEMED":
+        welcome_msg = "Verification successful. Notice: This VIP Food Pass has ALREADY been redeemed! Strictly 1 coupon per student is permitted."
+    elif not is_new:
+        welcome_msg = "Verification successful! Existing VIP Food Pass retrieved. (Strict limit: 1 coupon per student)"
+    else:
+        welcome_msg = "Verification successful! VIP Food Pass unlocked."
+
     return VerifyIdentityResponse(
         success=True,
-        message="Verification successful! VIP Food Pass unlocked.",
+        message=welcome_msg,
         access_token=access_token,
         token_type="bearer",
         student_id=student.id,

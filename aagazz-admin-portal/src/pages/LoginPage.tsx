@@ -1,14 +1,22 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, ArrowRight, Shield, AlertCircle, RefreshCw, KeyRound } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Lock, Mail, ArrowRight, Shield, AlertCircle, RefreshCw, KeyRound, Clock } from 'lucide-react';
 import { api } from '../services/api';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isExpired = searchParams.get('expired') === '1';
+
+  useEffect(() => {
+    if (isExpired) {
+      api.logout();
+    }
+  }, [isExpired]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,6 +106,13 @@ export const LoginPage: React.FC = () => {
                 />
               </div>
             </div>
+
+            {isExpired && !error && (
+              <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-600/50 flex items-start gap-2.5 text-xs text-amber-300">
+                <Clock className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <span>Your session has expired. Please log in again to access the operations console.</span>
+              </div>
+            )}
 
             {error && (
               <div className="p-3 rounded-xl bg-red-950/40 border border-red-800/50 flex items-start gap-2.5 text-xs text-red-300">

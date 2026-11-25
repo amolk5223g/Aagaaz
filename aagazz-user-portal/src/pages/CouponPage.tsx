@@ -324,6 +324,16 @@ export const CouponPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Redeemed Warning Banner */}
+        {isRedeemed && (
+          <div className="w-full mt-3.5 p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-300 text-xs text-center font-semibold">
+            ✦ MEAL PASS ALREADY REDEEMED ✦<br />
+            <span className="text-[11px] text-amber-200/80 font-normal">
+              One USN = One Coupon Policy Enforced. This pass has been used and no further coupons can be issued for USN {coupon.usn}.
+            </span>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="w-full flex flex-col gap-2.5 mt-4 print:hidden">
           <div className="grid grid-cols-2 gap-2 w-full">
