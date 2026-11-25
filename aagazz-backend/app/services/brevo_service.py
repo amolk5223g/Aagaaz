@@ -174,13 +174,6 @@ def build_food_pass_html(student_name: str, usn: str, coupon_code: str, qr_token
                     COUPON: {coupon_code}
                   </p>
                   
-                  <!-- Direct Web Pass Link Button -->
-                  <div style="margin-bottom: 26px;">
-                    <a href="{portal_url}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #FFD78A 0%, #D9AC63 50%, #B88643 100%); color: #080604; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; padding: 14px 30px; border-radius: 12px; text-decoration: none; box-shadow: 0 4px 15px rgba(217, 172, 99, 0.35);">
-                      Open Live Pass in Portal →
-                    </a>
-                  </div>
-                  
                   <!-- Terms & Warning Notice -->
                   <div style="background-color: rgba(217, 172, 99, 0.08); border-left: 3px solid #D9AC63; padding: 12px 16px; margin: 0 0 24px 0; text-align: left; border-radius: 0 8px 8px 0; line-height: 1.5; font-size: 11px; color: #D9AC63;">
                     📌 <strong>Pass Rules:</strong> Exactly <strong>ONE</strong> food pass is permitted per student USN. This QR code will be invalidated immediately upon volunteer counter scanning.

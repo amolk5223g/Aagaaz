@@ -127,7 +127,7 @@ def process_file(file_path: str, live_send: bool = True):
 
             # 3. Generate or retrieve unique food coupon
             coupon, raw_token, is_new = get_or_create_food_coupon(db, student=student, event=event)
-            qr_payload = raw_token if raw_token else coupon.coupon_code
+            qr_payload = coupon.coupon_code
 
             # 4. Dispatch Email via Brevo
             if live_send:
